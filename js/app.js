@@ -59,6 +59,7 @@ const SolarisTranslations = {
         "position-today": "Posizione Gnomone Oggi (Z):",
         "gnomon-range": "Escursione Totale Gnomone:",
         "gnomon-height-suggest": "Altezza Gnomone (Persona):",
+        "person-height": "Altezza Persona (Gnomone):",
         "eot-graph-title": "Equazione del Tempo (Variazione Annuale)",
         "eot-slow": "Sole lento (Orologio avanti)",
         "eot-fast": "Sole veloce (Orologio indietro)",
@@ -133,6 +134,7 @@ const SolarisTranslations = {
         "position-today": "Gnomon Position Today (Z):",
         "gnomon-range": "Gnomon Total Range:",
         "gnomon-height-suggest": "Gnomon Height (Person):",
+        "person-height": "Person Height (Gnomon):",
         "eot-graph-title": "Equation of Time (Annual Variation)",
         "eot-slow": "Sun slow (Clock ahead)",
         "eot-fast": "Sun fast (Clock behind)",
@@ -173,7 +175,8 @@ const SolarisApp = {
         timeMinutes: 720, // 12:00 in minuti
         isLive: false,
         wallZoom: 100,
-        floorZoom: 80
+        floorZoom: 80,
+        personHeight: 1.70
     },
 
     liveInterval: null,
@@ -279,6 +282,12 @@ const SolarisApp = {
         document.getElementById('input-floor-zoom').addEventListener('input', (e) => {
             SolarisApp.state.floorZoom = parseFloat(e.target.value);
             document.getElementById('floor-zoom-val').innerText = `${e.target.value}%`;
+            SolarisApp.calculateAndRedraw();
+        });
+
+        document.getElementById('input-person-height').addEventListener('input', (e) => {
+            SolarisApp.state.personHeight = parseFloat(e.target.value);
+            document.getElementById('person-height-val').innerText = `${parseFloat(e.target.value).toFixed(2)} m`;
             SolarisApp.calculateAndRedraw();
         });
 
@@ -498,6 +507,7 @@ const SolarisApp = {
         document.getElementById('input-ellipse-width').value = SolarisApp.state.ellipseWidth;
         document.getElementById('input-wall-zoom').value = SolarisApp.state.wallZoom;
         document.getElementById('input-floor-zoom').value = SolarisApp.state.floorZoom;
+        document.getElementById('input-person-height').value = SolarisApp.state.personHeight;
         document.getElementById('select-timezone').value = SolarisApp.state.timezone;
         document.getElementById('check-dst').checked = SolarisApp.state.isDst;
         document.getElementById('input-date').value = SolarisApp.state.date;
@@ -522,6 +532,7 @@ const SolarisApp = {
         document.getElementById('ellipse-w-val').innerText = `${SolarisApp.state.ellipseWidth.toFixed(1)} m`;
         document.getElementById('wall-zoom-val').innerText = `${SolarisApp.state.wallZoom}%`;
         document.getElementById('floor-zoom-val').innerText = `${SolarisApp.state.floorZoom}%`;
+        document.getElementById('person-height-val').innerText = `${SolarisApp.state.personHeight.toFixed(2)} m`;
 
         const lang = SolarisApp.state.lang;
 
@@ -686,6 +697,7 @@ const SolarisApp = {
             
             document.getElementById('spec-gnomon-pos').innerText = `X: ${zToday.x.toFixed(3)} m, Y: ${zToday.y.toFixed(3)} m`;
             document.getElementById('spec-gnomon-range').innerHTML = `X: &plusmn; ${Math.abs(zMax.x).toFixed(2)} m, Y: &plusmn; ${Math.abs(zMax.y).toFixed(2)} m`;
+            document.getElementById('spec-gnomon-person').innerText = `${SolarisApp.state.personHeight.toFixed(2)} m`;
         }
     },
 

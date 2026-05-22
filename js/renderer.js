@@ -623,7 +623,7 @@ const SolarisRenderer = {
 
         if (sunPos.altitude > 0) {
             // Calcola la proiezione dell'ombra 3D reale sulla piazza in pendenza
-            const hPerson = 1.75; // altezza media persona standard
+            const hPerson = params.personHeight !== undefined ? params.personHeight : 1.70; // altezza media persona configurabile
             const shadowTip = SolarisMath.projectVerticalShadowOnSlope(
                 zOffset.x, zOffset.y, hPerson, 
                 sunPos.altitude, sunPos.azimuth, 
