@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solaris - Progettista e Calcolatore di Meridiane ed Orologi Solari</title>
+    <!-- Google Fonts: Space Grotesk & Outift -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="glow-orb" id="orb-solar"></div>
+    <div class="glow-orb" id="orb-secondary"></div>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="sun-icon">☀️</span>
+                <div class="brand">
+                    <h1>Solaris</h1>
+                    <p class="tagline" data-i18n="tagline">Calcolatore e Progettista di Meridiane</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button id="lang-btn" class="btn btn-secondary lang-toggle">
+                    <span class="lang-text">ENG</span>
+                    <span class="lang-flag">🇬🇧</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <div class="main-layout">
+            
+            <!-- SIDEBAR: CONTROLS -->
+            <aside class="sidebar control-panel">
+                <h2 data-i18n="parameters">Parametri di Progetto</h2>
+                
+                <!-- Tab Mode Toggle inside sidebar -->
+                <div class="mode-selector">
+                    <button class="mode-tab active" data-mode="wall" data-i18n="mode-wall">Parete (Verticale)</button>
+                    <button class="mode-tab" data-mode="floor" data-i18n="mode-floor">Pavimento (Umano)</button>
+                </div>
+
+                <div class="control-scroll-area">
+                    <!-- SECTION 1: GEOGRAPHY -->
+                    <div class="control-section">
+                        <h3 data-i18n="section-geography">1. Posizione Geografica</h3>
+                        
+                        <div class="form-group-row">
+                            <button id="btn-geolocation" class="btn btn-primary btn-full-width">
+                                <span class="icon">📍</span> <span data-i18n="use-gps">Usa la mia posizione</span>
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-latitude">
+                                <span data-i18n="latitude">Latitudine</span> (&deg;N)
+                                <span class="val-display" id="lat-val">45.000&deg;</span>
+                            </label>
+                            <input type="range" id="input-latitude" min="-90" max="90" step="0.001" value="45.000">
+                            <div class="input-number-wrap">
+                                <input type="number" id="num-latitude" min="-90" max="90" step="0.000001" value="45.000">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-longitude">
+                                <span data-i18n="longitude">Longitudine</span> (&deg;E)
+                                <span class="val-display" id="lng-val">12.000&deg;</span>
+                            </label>
+                            <input type="range" id="input-longitude" min="-180" max="180" step="0.001" value="12.000">
+                            <div class="input-number-wrap">
+                                <input type="number" id="num-longitude" min="-180" max="180" step="0.000001" value="12.000">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="select-timezone" data-i18n="timezone">Fuso Orario (UTC)</label>
+                            <select id="select-timezone">
+                                <option value="-12">UTC-12</option>
+                                <option value="-11">UTC-11</option>
+                                <option value="-10">UTC-10</option>
+                                <option value="-9">UTC-9</option>
+                                <option value="-8">UTC-8</option>
+                                <option value="-7">UTC-7</option>
+                                <option value="-6">UTC-6</option>
+                                <option value="-5">UTC-5</option>
+                                <option value="-4">UTC-4</option>
+                                <option value="-3">UTC-3</option>
+                                <option value="-2">UTC-2</option>
+                                <option value="-1">UTC-1</option>
+                                <option value="0">UTC+0 (Greenwich)</option>
+                                <option value="1" selected>UTC+1 (Roma, Parigi, Berlino)</option>
+                                <option value="2">UTC+2 (Atene, Kiev, Cairo)</option>
+                                <option value="3">UTC+3 (Mosca, Istanbul, Nairobi)</option>
+                                <option value="4">UTC+4</option>
+                                <option value="5">UTC+5</option>
+                                <option value="6">UTC+6</option>
+                                <option value="7">UTC+7</option>
+                                <option value="8">UTC+8 (Pechino, Singapore)</option>
+                                <option value="9">UTC+9 (Tokyo, Seul)</option>
+                                <option value="10">UTC+10 (Sydney)</option>
+                                <option value="11">UTC+11</option>
+                                <option value="12">UTC+12</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group-checkbox">
+                            <input type="checkbox" id="check-dst" checked>
+                            <label for="check-dst" data-i18n="dst-label">Ora Legale (+1h) attiva</label>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: DIMENSIONS / GEOMETRY -->
+                    <!-- Dynamic fields based on active tab -->
+                    <div class="control-section" id="section-geometry">
+                        <h3 data-i18n="section-dimensions">2. Geometria Meridiana</h3>
+                        
+                        <!-- Wall Specific Controls -->
+                        <div id="controls-wall-only">
+                            <div class="form-group">
+                                <label for="input-declination">
+                                    <span data-i18n="wall-declination">Declinazione Muro</span> (&deg;)
+                                    <span class="val-display" id="dec-val">0.0&deg;</span>
+                                </label>
+                                <span class="help-text" id="wall-dir-text" data-i18n="wall-south">Puro Sud (0&deg;)</span>
+                                <input type="range" id="input-declination" min="-90" max="90" step="0.5" value="0.0">
+                                <div class="input-number-wrap">
+                                    <input type="number" id="num-declination" min="-90" max="90" step="0.1" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="input-inclination">
+                                    <span data-i18n="wall-inclination">Inclinazione Parete</span> (&deg;)
+                                    <span class="val-display" id="inc-val">0.0&deg;</span>
+                                </label>
+                                <span class="help-text" id="wall-inc-text" data-i18n="wall-vert">Perfettamente Verticale (0&deg;)</span>
+                                <input type="range" id="input-inclination" min="-45" max="45" step="0.5" value="0.0">
+                                <div class="input-number-wrap">
+                                    <input type="number" id="num-inclination" min="-45" max="45" step="0.1" value="0.0">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="input-gnomon-len">
+                                    <span data-i18n="gnomon-length">Lunghezza Stilo Fisico</span> (mm)
+                                    <span class="val-display" id="gnomon-len-val">200 mm</span>
+                                </label>
+                                <input type="range" id="input-gnomon-len" min="50" max="1000" step="5" value="200">
+                            </div>
+                        </div>
+
+                        <!-- Floor Specific Controls -->
+                        <div id="controls-floor-only" class="hidden">
+                            <div class="form-group">
+                                <label for="input-ellipse-width">
+                                    <span data-i18n="ellipse-width">Semiasse Maggiore (a)</span> (m)
+                                    <span class="val-display" id="ellipse-w-val">3.0 m</span>
+                                </label>
+                                <span class="help-text" data-i18n="ellipse-help">Larghezza totale ellisse = 2 &times; a</span>
+                                <input type="range" id="input-ellipse-width" min="1" max="20" step="0.1" value="3.0">
+                            </div>
+
+                            <div class="form-group-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="input-floor-slope">
+                                        <span data-i18n="floor-slope">Pendenza</span> (&deg;)
+                                        <span class="val-display" id="slope-val">0.0&deg;</span>
+                                    </label>
+                                    <input type="range" id="input-floor-slope" min="0" max="30" step="0.5" value="0.0">
+                                    <div class="input-number-wrap">
+                                        <input type="number" id="num-floor-slope" min="0" max="30" step="0.1" value="0.0">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="input-floor-slope-dir">
+                                        <span data-i18n="slope-direction">Direzione</span> (&deg;)
+                                        <span class="val-display" id="slope-dir-val">180&deg;</span>
+                                    </label>
+                                    <input type="range" id="input-floor-slope-dir" min="0" max="360" step="5" value="180">
+                                    <div class="input-number-wrap">
+                                        <input type="number" id="num-floor-slope-dir" min="0" max="360" step="1" value="180">
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="help-text" id="floor-slope-text" style="margin-top:-0.5rem;" data-i18n="floor-flat">Pavimento Orizzontale (Piatto)</span>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: SIMULATION (TIME & DATE) -->
+                    <div class="control-section">
+                        <h3 data-i18n="section-simulation">3. Data & Ora Simulazione</h3>
+                        
+                        <div class="form-group">
+                            <label for="input-date" data-i18n="date">Data</label>
+                            <input type="date" id="input-date" value="2026-06-21">
+                            <div class="quick-dates">
+                                <button class="btn btn-mini" data-date="summer-solstice" data-i18n="solstice-s">Solst. Est.</button>
+                                <button class="btn btn-mini" data-date="equinox" data-i18n="equinox-a">Equinozio</button>
+                                <button class="btn btn-mini" data-date="winter-solstice" data-i18n="solstice-w">Solst. Inv.</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-time">
+                                <span data-i18n="clock-time">Ora di Orologio</span>
+                                <span class="val-display" id="time-val">12:00</span>
+                            </label>
+                            <input type="range" id="input-time" min="360" max="1080" step="5" value="720"> <!-- 6:00 to 18:00 in minutes -->
+                            <div class="time-controls">
+                                <button id="btn-live" class="btn btn-secondary btn-mini-wide">
+                                    <span class="pulse-dot"></span> <span data-i18n="live">LIVE</span>
+                                </button>
+                                <span class="time-quick-val" id="time-clock-display">12:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN PANEL: CANVAS, METRICS & RESULTS -->
+            <main class="main-content">
+                
+                <!-- ACTIVE VIEW CONTAINER -->
+                <div class="panel view-panel glass-panel">
+                    <div class="view-header">
+                        <h2 id="view-title" data-i18n="title-wall">Meridiana Verticale Declinante</h2>
+                        <div class="export-actions">
+                            <button id="btn-export-svg" class="btn btn-gold">
+                                <span class="icon">💾</span> <span data-i18n="export-svg">Esporta SVG</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- THE DRAWING CONTAINER -->
+                    <div class="drawing-viewport" id="canvas-container">
+                        <canvas id="sundial-canvas"></canvas>
+                        <!-- Floating legend/scale -->
+                        <div class="viewport-legend" id="viewport-legend">
+                            <span class="legend-scale" id="legend-scale-text">Scala 1:10</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INFO CARDS GRID -->
+                <div class="metrics-grid">
+                    
+                    <!-- SOLAR DATA CARD -->
+                    <div class="card glass-card">
+                        <h4 data-i18n="solar-data-title">Dati Solari Istantanei</h4>
+                        <div class="metric-row">
+                            <span class="metric-label" data-i18n="solar-time">Tempo Solare Vero:</span>
+                            <span class="metric-value highlight" id="metric-solar-time">12:15</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label" data-i18n="eot-label">Equazione del Tempo (EoT):</span>
+                            <span class="metric-value" id="metric-eot">+3.2 min</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label" data-i18n="sun-altitude">Altezza Sole:</span>
+                            <span class="metric-value" id="metric-sun-alt">68.4&deg;</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label" data-i18n="sun-azimuth">Azimut Sole:</span>
+                            <span class="metric-value" id="metric-sun-az">180.2&deg;</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label" data-i18n="solar-dec">Declinazione Solare:</span>
+                            <span class="metric-value" id="metric-solar-dec">+23.44&deg;</span>
+                        </div>
+                    </div>
+
+                    <!-- CONSTRUCTION / GNOMON DATA CARD -->
+                    <div class="card glass-card" id="card-construction">
+                        <h4 id="card-construction-title" data-i18n="gnomon-specs-title">Scheda Tecnica dello Gnomone</h4>
+                        
+                        <!-- Wall Specific specs -->
+                        <div id="specs-wall-only">
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="gnomon-style-height">Altezza Stilo (Ortostilo) (a):</span>
+                                <span class="metric-value highlight" id="spec-orthostyle-len">141.4 mm</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="gnomon-style-inclin">Inclinazione Stilo dal Muro (stilo):</span>
+                                <span class="metric-value" id="spec-style-angle">45.0&deg;</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="substyle-angle">Angolo del Substilo (SD):</span>
+                                <span class="metric-value" id="spec-substyle-angle">0.0&deg;</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="long-diff-substyle">Differenza Long. Substilo (H0):</span>
+                                <span class="metric-value" id="spec-h0-angle">0.0&deg;</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="gnomon-length-hyp">Lunghezza Stilo Polare (ipotenusa):</span>
+                                <span class="metric-value" id="spec-polar-len">200 mm</span>
+                            </div>
+                        </div>
+
+                        <!-- Floor Specific specs -->
+                        <div id="specs-floor-only" class="hidden">
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="ellipse-b">Semiasse Minore (b):</span>
+                                <span class="metric-value highlight" id="spec-semi-minor-b">2.12 m</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="eccentricity">Eccentricità dell'Ellisse (e):</span>
+                                <span class="metric-value" id="spec-eccentricity">0.707</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="position-today">Posizione Gnomone Oggi (Z):</span>
+                                <span class="metric-value highlight" id="spec-gnomon-pos">0.92 m (Nord)</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="gnomon-range">Escursione Totale Gnomone:</span>
+                                <span class="metric-value" id="spec-gnomon-range">&plusmn; 0.92 m</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label" data-i18n="gnomon-height-suggest">Altezza Gnomone (Persona):</span>
+                                <span class="metric-value" id="spec-gnomon-person">~1.75 m</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EQUATION OF TIME GRAPH CARD -->
+                    <div class="card glass-card chart-card">
+                        <h4 data-i18n="eot-graph-title">Equazione del Tempo (Variazione Annuale)</h4>
+                        <div class="chart-container">
+                            <canvas id="eot-canvas"></canvas>
+                        </div>
+                        <div class="chart-footer">
+                            <span data-i18n="eot-slow">Orologio in ritardo (Sole lento)</span>
+                            <span data-i18n="eot-fast">Orologio in anticipo (Sole veloce)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRACING DATA FOR CONSTRUCTING FLOOR SUNDIAL -->
+                <div class="panel data-panel glass-panel hidden" id="floor-tracing-panel">
+                    <div class="panel-header">
+                        <h3 data-i18n="tracing-title">Tabella di Tracciamento Cantiere (Orologio a Pavimento)</h3>
+                        <div class="panel-actions">
+                            <button id="btn-export-csv" class="btn btn-secondary btn-mini-wide" data-i18n="export-csv">Esporta CSV</button>
+                            <button id="btn-print-table" class="btn btn-secondary btn-mini-wide" data-i18n="print">Stampa</button>
+                        </div>
+                    </div>
+                    <p class="panel-instructions" data-i18n="tracing-instructions">
+                        Per tracciare l'ellisse sulla piazza, fissa il centro (0,0). Traccia l'asse X (Est-Ovest) e l'asse Y (Nord-Sud). 
+                        Posiziona i tasselli delle ore alle coordinate (X, Y) sotto indicate. Traccia la scala del calendario sull'asse Y (Nord-Sud) alle distanze (Z) indicate per i primi giorni del mese.
+                    </p>
+                    <div class="tabbed-table-container">
+                        <div class="table-switch">
+                            <button class="table-tab active" data-table="hours" data-i18n="tab-hours">Punti Orari (Ellisse)</button>
+                            <button class="table-tab" data-table="dates" data-i18n="tab-calendar">Scala del Calendario (Gnomone)</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table" id="table-hours">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="th-hour">Ora Solare</th>
+                                        <th data-i18n="th-hour-angle">Angolo (H)</th>
+                                        <th>X (Est-Ovest)</th>
+                                        <th>Y (Nord-Sud)</th>
+                                        <th data-i18n="th-distance">Distanza dal Centro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-hours-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                            <table class="data-table hidden" id="table-dates">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="th-date">Data / Primo del Mese</th>
+                                        <th data-i18n="th-declination">Declinazione (&delta;)</th>
+                                        <th data-i18n="th-position-z">Posizione Z (Nord/Sud)</th>
+                                        <th data-i18n="th-direction">Direzione dal Centro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-dates-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/math.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

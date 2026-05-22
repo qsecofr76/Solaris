@@ -1,0 +1,13 @@
+# File di sistema e temporanei
+.DS_Store
+Thumbs.db
+*.log
+
+# File di configurazione degli editor / IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
