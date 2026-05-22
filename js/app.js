@@ -40,6 +40,7 @@ const SolarisTranslations = {
         "title-wall": "Meridiana Verticale Declinante",
         "title-floor": "Orologio a Pavimento (Meridiana Umana)",
         "export-svg": "Esporta SVG",
+        "export-pdf": "Esporta PDF",
         "export-csv": "Esporta CSV",
         "print": "Stampa",
         "solar-data-title": "Dati Solari Istantanei",
@@ -115,6 +116,7 @@ const SolarisTranslations = {
         "title-wall": "Declining Vertical Sundial",
         "title-floor": "Floor Sundial (Human Analemmatic)",
         "export-svg": "Export SVG",
+        "export-pdf": "Export PDF",
         "export-csv": "Export CSV",
         "print": "Print",
         "solar-data-title": "Instantaneous Solar Data",
@@ -434,6 +436,11 @@ const SolarisApp = {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        });
+
+        // Esportazione PDF
+        document.getElementById('btn-export-pdf').addEventListener('click', () => {
+            SolarisRenderer.exportToPDF(SolarisApp.state.mode, SolarisApp.state, SolarisApp.state.lang);
         });
 
         // Esportazione CSV

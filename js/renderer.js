@@ -752,25 +752,25 @@ const SolarisRenderer = {
             svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
   <!-- Sfondo elegante -->
-  <rect width="800" height="800" fill="#090d16" />
-  <circle cx="400" cy="350" r="300" stroke="#f59e0b" stroke-width="0.5" fill="none" opacity="0.1" />
+  <rect width="800" height="800" fill="#ffffff" />
+  <circle cx="400" cy="350" r="300" stroke="#b45309" stroke-width="0.5" fill="none" opacity="0.15" />
   
   <!-- Titoli e info -->
-  <text x="40" y="50" font-family="'Space Grotesk', sans-serif" font-size="24" font-weight="bold" fill="#f59e0b">SOLARIS</text>
-  <text x="40" y="80" font-family="'Outfit', sans-serif" font-size="14" fill="#9ca3af">${lang === 'it' ? 'Meridiana Verticale Declinante' : 'Declining Vertical Sundial'}</text>
+  <text x="40" y="50" font-family="'Space Grotesk', sans-serif" font-size="24" font-weight="bold" fill="#b45309">SOLARIS</text>
+  <text x="40" y="80" font-family="'Outfit', sans-serif" font-size="14" fill="#333333">${lang === 'it' ? 'Meridiana Verticale Declinante' : 'Declining Vertical Sundial'}</text>
   
   <!-- Box Parametri -->
-  <g transform="translate(40, 675)" font-family="'Outfit', sans-serif" font-size="11" fill="#9ca3af">
-    <text x="0" y="0"><tspan fill="#f59e0b" font-weight="bold">PARAMETRI / PARAMETERS:</tspan></text>
+  <g transform="translate(40, 675)" font-family="'Outfit', sans-serif" font-size="11" fill="#4b5563">
+    <text x="0" y="0"><tspan fill="#b45309" font-weight="bold">PARAMETRI / PARAMETERS:</tspan></text>
     <text x="0" y="18">Latitudine / Latitude: ${lat.toFixed(3)}°N | Longitudine / Longitude: ${lon.toFixed(3)}°E</text>
     <text x="0" y="34">Declinazione Muro / Wall Declination: ${dec.toFixed(1)}°</text>
     <text x="0" y="50">Inclinazione Muro / Wall Inclination: ${(params.inclination || 0).toFixed(1)}°</text>
     
-    <text x="280" y="0"><tspan fill="#f59e0b" font-weight="bold">SCHEDA TECNICA STILO / GNOMON SPECS:</tspan></text>
+    <text x="280" y="0"><tspan fill="#b45309" font-weight="bold">SCHEDA TECNICA STILO / GNOMON SPECS:</tspan></text>
     <text x="280" y="18">Lungh. Stilo Polare / Polar Length: ${gparams.polarLength.toFixed(1)} mm</text>
     <text x="280" y="34">Alt. Stilo Gnomonico / Orthostyle Height: ${gparams.orthoLength.toFixed(1)} mm</text>
     <text x="280" y="50">Substilo Fisico / Substyle Length: ${gparams.substyleLength.toFixed(1)} mm</text>
-    <text x="560" y="0"><tspan fill="#f59e0b" font-weight="bold">ANGOLI / ANGLES:</tspan></text>
+    <text x="560" y="0"><tspan fill="#b45309" font-weight="bold">ANGOLI / ANGLES:</tspan></text>
     <text x="560" y="18">Inclinaz. Stilo / Style Angle (a): ${gparams.styleAngle.toFixed(2)}°</text>
     <text x="560" y="34">Angolo Substilo / Substyle (SD): ${gparams.substyleAngle.toFixed(2)}°</text>
     <text x="560" y="50">Diff. Longitudine / H0 Angle: ${gparams.h0.toFixed(2)}°</text>
@@ -781,7 +781,7 @@ const SolarisRenderer = {
     <!-- Origine (0,0) reale a (400, 350) -->
     <!-- Raggio di scala = 250px -->
     <!-- Linea verticale di riferimento -->
-    <line x1="400" y1="350" x2="400" y2="600" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" />
+    <line x1="400" y1="350" x2="400" y2="600" stroke="#000000" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" />
     
     <!-- Linee orarie -->
     ${(() => {
@@ -795,7 +795,7 @@ const SolarisRenderer = {
             const dummySun = SolarisMath.getSunPosition(lat, solarDec, line.hourAngle);
             const dummyProj = SolarisMath.projectNodusShadowOnWall(dummySun.altitude, dummySun.azimuth, lat, dec, gparams, params.inclination);
             const opacity = dummyProj ? "1.0" : "0.15";
-            const strokeColor = dummyProj ? "#ffffff" : "#4b5563";
+            const strokeColor = dummyProj ? "#000000" : "#cccccc";
 
             // Calcola i punti d'ombra al solstizio d'inverno (-23.44) e d'estate (23.44) per il clipping delle linee
             const sPosWin = SolarisMath.getSunPosition(lat, -23.44, line.hourAngle);
@@ -844,7 +844,7 @@ const SolarisRenderer = {
             return `
     <!-- Ora ${hVal} -->
     <line x1="${lx1.toFixed(1)}" y1="${ly1.toFixed(1)}" x2="${lx2.toFixed(1)}" y2="${ly2.toFixed(1)}" stroke="${strokeColor}" stroke-width="${hVal === 12 ? '2' : '1'}" opacity="${opacity}" />
-    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="12" font-weight="${hVal === 12 ? 'bold' : 'normal'}" fill="${hVal === 12 ? '#f59e0b' : '#ffffff'}" text-anchor="middle" dominant-baseline="middle" opacity="${opacity}" transform="rotate(${rotDeg.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)})">${romanNumerals[hVal]}</text>`;
+    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="12" font-weight="${hVal === 12 ? 'bold' : 'normal'}" fill="${hVal === 12 ? '#b45309' : '#000000'}" text-anchor="middle" dominant-baseline="middle" opacity="${opacity}" transform="rotate(${rotDeg.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)})">${romanNumerals[hVal]}</text>`;
         }).join('');
     })()}
 
@@ -888,31 +888,32 @@ const SolarisRenderer = {
 
         return `
     <!-- Triangolo dello gnomone ribaltato -->
-    <polygon points="400,350 ${footX.toFixed(1)},${footY.toFixed(1)} ${foldedNodusX.toFixed(1)},${foldedNodusY.toFixed(1)}" fill="#f59e0b" fill-opacity="0.06" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,4" />
+    <!-- Triangolo dello gnomone ribaltato -->
+    <polygon points="400,350 ${footX.toFixed(1)},${footY.toFixed(1)} ${foldedNodusX.toFixed(1)},${foldedNodusY.toFixed(1)}" fill="#b45309" fill-opacity="0.06" stroke="#b45309" stroke-width="1.5" stroke-dasharray="4,4" />
     
     <!-- Testi e misure dei lati -->
-    <text x="${(midBaseX + shiftBaseX).toFixed(1)}" y="${(midBaseY + shiftBaseY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-style="italic" fill="#f59e0b" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotBase.toFixed(1)} ${(midBaseX + shiftBaseX).toFixed(1)} ${(midBaseY + shiftBaseY).toFixed(1)})">${lang === 'it' ? `Substilo: ${gparams.substyleLength.toFixed(1)} mm` : `Substyle: ${gparams.substyleLength.toFixed(1)} mm`}</text>
+    <text x="${(midBaseX + shiftBaseX).toFixed(1)}" y="${(midBaseY + shiftBaseY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-style="italic" fill="#b45309" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotBase.toFixed(1)} ${(midBaseX + shiftBaseX).toFixed(1)} ${(midBaseY + shiftBaseY).toFixed(1)})">${lang === 'it' ? `Substilo: ${gparams.substyleLength.toFixed(1)} mm` : `Substyle: ${gparams.substyleLength.toFixed(1)} mm`}</text>
     
-    <text x="${(midOrthoX + shiftOrthoX).toFixed(1)}" y="${(midOrthoY + shiftOrthoY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-style="italic" fill="#f59e0b" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotOrtho.toFixed(1)} ${(midOrthoX + shiftOrthoX).toFixed(1)} ${(midOrthoY + shiftOrthoY).toFixed(1)})">${lang === 'it' ? `Ortostilo (h): ${gparams.orthoLength.toFixed(1)} mm` : `Orthostyle (h): ${gparams.orthoLength.toFixed(1)} mm`}</text>
+    <text x="${(midOrthoX + shiftOrthoX).toFixed(1)}" y="${(midOrthoY + shiftOrthoY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-style="italic" fill="#b45309" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotOrtho.toFixed(1)} ${(midOrthoX + shiftOrthoX).toFixed(1)} ${(midOrthoY + shiftOrthoY).toFixed(1)})">${lang === 'it' ? `Ortostilo (h): ${gparams.orthoLength.toFixed(1)} mm` : `Orthostyle (h): ${gparams.orthoLength.toFixed(1)} mm`}</text>
     
-    <text x="${(midHypX + shiftHypX).toFixed(1)}" y="${(midHypY + shiftHypY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" font-style="italic" fill="#f59e0b" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotHyp.toFixed(1)} ${(midHypX + shiftHypX).toFixed(1)} ${(midHypY + shiftHypY).toFixed(1)})">${lang === 'it' ? `Stilo Polare: ${gparams.polarLength.toFixed(1)} mm` : `Polar Style: ${gparams.polarLength.toFixed(1)} mm`}</text>
+    <text x="${(midHypX + shiftHypX).toFixed(1)}" y="${(midHypY + shiftHypY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" font-style="italic" fill="#b45309" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotHyp.toFixed(1)} ${(midHypX + shiftHypX).toFixed(1)} ${(midHypY + shiftHypY).toFixed(1)})">${lang === 'it' ? `Stilo Polare: ${gparams.polarLength.toFixed(1)} mm` : `Polar Style: ${gparams.polarLength.toFixed(1)} mm`}</text>
     
     <!-- Indicazione angolo stilo -->
-    <text x="${angleTextX.toFixed(1)}" y="${(angleTextY + 3).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="8" fill="#f59e0b" fill-opacity="0.7" text-anchor="start">a = ${gparams.styleAngle.toFixed(1)}°</text>
+    <text x="${angleTextX.toFixed(1)}" y="${(angleTextY + 3).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="8" fill="#b45309" fill-opacity="0.7" text-anchor="start">a = ${gparams.styleAngle.toFixed(1)}°</text>
     
     <!-- Apex marker di fissaggio -->
-    <circle cx="400" cy="350" r="6" fill="#ffffff" stroke="#f59e0b" stroke-width="2.5" />
-    <circle cx="400" cy="350" r="2.5" fill="#f59e0b" />
-    <text x="400" y="335" font-family="'Space Grotesk', sans-serif" font-size="10" font-weight="bold" fill="#f59e0b" text-anchor="middle">${lang === 'it' ? 'FISSAGGIO STILO (APEX)' : 'STYLE ATTACHMENT (APEX)'}</text>
+    <circle cx="400" cy="350" r="6" fill="#ffffff" stroke="#b45309" stroke-width="2.5" />
+    <circle cx="400" cy="350" r="2.5" fill="#b45309" />
+    <text x="400" y="335" font-family="'Space Grotesk', sans-serif" font-size="10" font-weight="bold" fill="#b45309" text-anchor="middle">${lang === 'it' ? 'FISSAGGIO STILO (APEX)' : 'STYLE ATTACHMENT (APEX)'}</text>
         `;
     })()}
 
     <!-- Curve di declinazione (Solstizi ed Equinozi) -->
     ${(() => {
         const dVals = [
-            { v: 23.44, col: "#f59e0b", name: "SOLSTIZIO ESTATE / SUMMER SOLSTICE" },
-            { v: 0, col: "#10b981", name: "EQUINOZI / EQUINOXES" },
-            { v: -23.44, col: "#3b82f6", name: "SOLSTIZIO INVERNO / WINTER SOLSTICE" }
+            { v: 23.44, col: "#b45309", name: "SOLSTIZIO ESTATE / SUMMER SOLSTICE" },
+            { v: 0, col: "#047857", name: "EQUINOZI / EQUINOXES" },
+            { v: -23.44, col: "#1d4ed8", name: "SOLSTIZIO INVERNO / WINTER SOLSTICE" }
         ];
         const ox = 400;
         const oy = 350;
@@ -999,20 +1000,20 @@ const SolarisRenderer = {
 
             svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
-  <rect width="800" height="800" fill="#090d16" />
+  <rect width="800" height="800" fill="#ffffff" />
   
-  <text x="40" y="50" font-family="'Space Grotesk', sans-serif" font-size="24" font-weight="bold" fill="#f59e0b">SOLARIS</text>
-  <text x="40" y="80" font-family="'Outfit', sans-serif" font-size="14" fill="#9ca3af">${lang === 'it' ? 'Orologio Solare a Pavimento (Umano)' : 'Floor/Analemmatic Human Sundial'}</text>
+  <text x="40" y="50" font-family="'Space Grotesk', sans-serif" font-size="24" font-weight="bold" fill="#b45309">SOLARIS</text>
+  <text x="40" y="80" font-family="'Outfit', sans-serif" font-size="14" fill="#333333">${lang === 'it' ? 'Orologio Solare a Pavimento (Umano)' : 'Floor/Analemmatic Human Sundial'}</text>
   
   <!-- Info Box -->
-  <g transform="translate(40, 670)" font-family="'Outfit', sans-serif" font-size="11" fill="#9ca3af">
-    <text x="0" y="0"><tspan fill="#f59e0b" font-weight="bold">PARAMETRI DELLA PIAZZA / PLAZA PARAMETERS:</tspan></text>
+  <g transform="translate(40, 670)" font-family="'Outfit', sans-serif" font-size="11" fill="#4b5563">
+    <text x="0" y="0"><tspan fill="#b45309" font-weight="bold">PARAMETRI DELLA PIAZZA / PLAZA PARAMETERS:</tspan></text>
     <text x="0" y="18">Latitudine / Latitude: ${lat.toFixed(3)}°N | Longitudine / Longitude: ${params.longitude.toFixed(3)}°E</text>
     <text x="0" y="34">Semiasse Maggiore / Semi-Major (a): ${aVal.toFixed(2)} m | Semiasse Minore / Semi-Minor (b): ${geom.b.toFixed(2)} m</text>
     <text x="0" y="50">Pendenza Piazza / Plaza Slope: ${slope.toFixed(1)}° verso ${slopeDir.toFixed(0)}°</text>
     <text x="0" y="66">Latitudine Virtuale / Virtual Lat: ${geom.phiVirt.toFixed(2)}° | Rotazione Ellisse / Rotation: ${(geom.rotationAngle * 180 / Math.PI).toFixed(1)}°</text>
     
-    <text x="420" y="0"><tspan fill="#f59e0b" font-weight="bold">GUIDA DI TRACCIAMENTO / LAYOUT GUIDE:</tspan></text>
+    <text x="420" y="0"><tspan fill="#b45309" font-weight="bold">GUIDA DI TRACCIAMENTO / LAYOUT GUIDE:</tspan></text>
     <text x="420" y="18">1. Fissa il centro (0,0). Traccia gli assi X (Est-Ovest) e Y (Nord-Sud) della piazza.</text>
     <text x="420" y="34">2. Posiziona le piastrelle delle ore alle coordinate (X, Y) esatte indicate in tabella.</text>
     <text x="420" y="50">3. La scala del calendario è ruotata di ${(geom.rotationAngle * 180 / Math.PI).toFixed(1)}° rispetto all'asse Y (Nord-Sud).</text>
@@ -1022,16 +1023,16 @@ const SolarisRenderer = {
   <!-- Grafica Orologio (Centro 400, 350) -->
   <g transform="translate(0, 0)">
     <!-- Assi Cartesiani -->
-    <line x1="50" y1="350" x2="750" y2="350" stroke="#ffffff" stroke-width="0.5" opacity="0.2" />
-    <line x1="400" y1="50" x2="400" y2="650" stroke="#ffffff" stroke-width="0.5" opacity="0.2" />
+    <line x1="50" y1="350" x2="750" y2="350" stroke="#000000" stroke-width="0.5" opacity="0.3" />
+    <line x1="400" y1="50" x2="400" y2="650" stroke="#000000" stroke-width="0.5" opacity="0.3" />
     
-    <text x="400" y="30" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#9ca3af" text-anchor="middle">N (Nord / North)</text>
-    <text x="400" y="670" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#9ca3af" text-anchor="middle">S (Sud / South)</text>
-    <text x="25" y="354" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#9ca3af">W (Ovest / West)</text>
-    <text x="755" y="354" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#9ca3af">E (Est / East)</text>
+    <text x="400" y="30" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#000000" text-anchor="middle">N (Nord / North)</text>
+    <text x="400" y="670" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#000000" text-anchor="middle">S (Sud / South)</text>
+    <text x="25" y="354" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#000000">W (Ovest / West)</text>
+    <text x="755" y="354" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#000000">E (Est / East)</text>
 
     <!-- Ellisse Oraria Ruotata -->
-    <ellipse cx="400" cy="350" rx="${aVal * scalePxPerM}" ry="${geom.b * scalePxPerM}" transform="rotate(${(-geom.rotationAngle * 180 / Math.PI).toFixed(2)} 400 350)" stroke="#f59e0b" stroke-width="1.5" fill="none" opacity="0.3" />
+    <ellipse cx="400" cy="350" rx="${aVal * scalePxPerM}" ry="${geom.b * scalePxPerM}" transform="rotate(${(-geom.rotationAngle * 180 / Math.PI).toFixed(2)} 400 350)" stroke="#b45309" stroke-width="1.5" fill="none" opacity="0.5" />
 
     <!-- Marcatori e scritte delle ore -->
     ${hourPoints.map((pt, idx) => {
@@ -1045,8 +1046,8 @@ const SolarisRenderer = {
 
         return `
     <!-- Ora ${hVal}: X=${pt.x.toFixed(3)}m, Y=${pt.y.toFixed(3)}m -->
-    <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${hVal === 12 ? '5' : '3.5'}" fill="${hVal === 12 ? '#f59e0b' : '#ffffff'}" />
-    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="11" font-weight="${hVal === 12 ? 'bold' : 'normal'}" fill="${hVal === 12 ? '#f59e0b' : '#ffffff'}" text-anchor="middle" dominant-baseline="middle">${hVal}</text>`;
+    <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${hVal === 12 ? '5' : '3.5'}" fill="${hVal === 12 ? '#b45309' : '#000000'}" />
+    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="11" font-weight="${hVal === 12 ? 'bold' : 'normal'}" fill="${hVal === 12 ? '#b45309' : '#000000'}" text-anchor="middle" dominant-baseline="middle">${hVal}</text>`;
     }).join('')}
 
     <!-- Scala calendariale centrale ruotata -->
@@ -1063,16 +1064,16 @@ const SolarisRenderer = {
             const ty = py - 8 * sinRot;
 
             return `
-    <line x1="${(px - tickDx).toFixed(1)}" y1="${(py + tickDy).toFixed(1)}" x2="${(px + tickDx).toFixed(1)}" y2="${(py - tickDy).toFixed(1)}" stroke="#f59e0b" stroke-width="1" />
-    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Outfit', sans-serif" font-size="9" fill="#f59e0b" dominant-baseline="middle">${lang === 'it' ? pt.nameIt : pt.nameEn} (X=${pt.x.toFixed(3)}m, Y=${pt.y.toFixed(3)}m)</text>`;
+    <line x1="${(px - tickDx).toFixed(1)}" y1="${(py + tickDy).toFixed(1)}" x2="${(px + tickDx).toFixed(1)}" y2="${(py - tickDy).toFixed(1)}" stroke="#b45309" stroke-width="1" />
+    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Outfit', sans-serif" font-size="9" fill="#000000" dominant-baseline="middle">${lang === 'it' ? pt.nameIt : pt.nameEn} (X=${pt.x.toFixed(3)}m, Y=${pt.y.toFixed(3)}m)</text>`;
         }).join('');
     })()}
 
     <!-- Scala Metrica di Riferimento -->
-    <g transform="translate(680, 50)" font-family="'Outfit', sans-serif" font-size="9" fill="#9ca3af">
-      <line x1="0" y1="10" x2="50" y2="10" stroke="#9ca3af" stroke-width="1.5" />
-      <line x1="0" y1="5" x2="0" y2="15" stroke="#9ca3af" stroke-width="1" />
-      <line x1="50" y1="5" x2="50" y2="15" stroke="#9ca3af" stroke-width="1" />
+    <g transform="translate(680, 50)" font-family="'Outfit', sans-serif" font-size="9" fill="#333333">
+      <line x1="0" y1="10" x2="50" y2="10" stroke="#333333" stroke-width="1.5" />
+      <line x1="0" y1="5" x2="0" y2="15" stroke="#333333" stroke-width="1" />
+      <line x1="50" y1="5" x2="50" y2="15" stroke="#333333" stroke-width="1" />
       <text x="25" y="0" text-anchor="middle">1.0 m</text>
     </g>
   </g>
@@ -1163,6 +1164,575 @@ const SolarisRenderer = {
         }
 
         return csvContent;
+    },
+
+    /**
+     * GENERATORE DI REPORT TECNICO IN FORMATO PDF
+     */
+    exportToPDF: (mode, params, lang = "it") => {
+        const lat = params.latitude;
+        const lon = params.longitude;
+        const dateStr = params.date || new Date().toISOString().split('T')[0];
+        
+        const t = {
+            it: {
+                title: "REPORT TECNICO DI COSTRUZIONE",
+                wallTitle: "Meridiana Verticale Declinante",
+                floorTitle: "Orologio a Pavimento (Meridiana Umana)",
+                paramsTitle: "PARAMETRI DI PROGETTAZIONE",
+                gnomonTitle: "SCHEDA TECNICA DELLO STILO / GNOMONE",
+                tableHoursTitle: "TABELLA DEI PUNTI ORARI",
+                tableGnomonTitle: "PUNTI CHIAVE DELLO STILO (GNOMONE / CALENDARIO)",
+                latitude: "Latitudine",
+                longitude: "Longitudine",
+                timezone: "Fuso Orario",
+                declination: "Declinazione Muro",
+                inclination: "Inclinazione Muro",
+                semiMajor: "Semiasse Maggiore (a)",
+                semiMinor: "Semiasse Minore (b)",
+                slope: "Pendenza Piazza",
+                slopeDir: "Direzione Pendenza",
+                polarLength: "Lunghezza Stilo Polare",
+                orthoLength: "Altezza Ortostilo (h)",
+                substyleLength: "Lunghezza Substilo",
+                styleAngle: "Inclinazione Stilo (a)",
+                substyleAngle: "Angolo Substilo (SD)",
+                h0: "Angolo H0 (Diff. Longitudine)",
+                hourCol: "Ora Solare",
+                angleCol: "Angolo",
+                angleFromVertCol: "Angolo da Verticale",
+                angleFromSubstyleCol: "Angolo da Substilo",
+                distCol: "Distanza (d)",
+                coordOrigin: "Origine delle Coordinate (0,0)",
+                coordOriginFloor: "Centro geometrico dell'ellisse / Punto di Equinozio sulla scala centrale",
+                coordOriginWall: "Punto di fissaggio dello stilo (Apex)",
+                footerMsg: "Generato da Solaris — Software di Progettazione Gnomonica",
+                summerSolstice: "Solstizio d'Estate (21 Giugno, δ = +23.44°)",
+                winterSolstice: "Solstizio d'Inverno (21 Dicembre, δ = -23.44°)",
+                equinox: "Equinozio (21 Marzo / 23 Settembre, δ = 0°)",
+                gnomonPointCol: "Punto Gnomonico",
+                coordinatesCol: "Coordinate X; Y (mm)",
+                declinationCol: "Declinazione (δ)",
+                shadowPointsTitle: "PUNTI D'OMBRA DEL NODULO A MEZZOGIORNO SOLARE",
+                sumShadow: "Ombra Solstizio Estate (12:00)",
+                winShadow: "Ombra Solstizio Inverno (12:00)",
+                eqShadow: "Ombra Equinozio (12:00)",
+                apexPoint: "Punto di Fissaggio Stilo (Apex)",
+                footPoint: "Piede dell'Ortostilo sul muro",
+                nodusPoint: "Posizione fisica del Nodulo",
+                heightAboveWall: "Altezza perpendicolare dal muro (mm)"
+            },
+            en: {
+                title: "TECHNICAL CONSTRUCTION REPORT",
+                wallTitle: "Declining Vertical Sundial",
+                floorTitle: "Floor Sundial (Human Analemmatic)",
+                paramsTitle: "DESIGN PARAMETERS",
+                gnomonTitle: "STYLE / GNOMON TECHNICAL SHEET",
+                tableHoursTitle: "HOUR POINTS TABLE",
+                tableGnomonTitle: "KEY POINTS OF THE STYLE (GNOMON / CALENDAR)",
+                latitude: "Latitude",
+                longitude: "Longitude",
+                timezone: "Timezone",
+                declination: "Wall Declination",
+                inclination: "Wall Inclination",
+                semiMajor: "Semi-Major Axis (a)",
+                semiMinor: "Semi-Minor Axis (b)",
+                slope: "Plaza Slope",
+                slopeDir: "Slope Direction",
+                polarLength: "Polar Style Length",
+                orthoLength: "Orthostyle Height (h)",
+                substyleLength: "Substyle Length",
+                styleAngle: "Style Angle (a)",
+                substyleAngle: "Substyle Angle (SD)",
+                h0: "H0 Angle (Longitude Diff)",
+                hourCol: "Solar Hour",
+                angleCol: "Angle",
+                angleFromVertCol: "Angle from Vertical",
+                angleFromSubstyleCol: "Angle from Substyle",
+                distCol: "Distance (d)",
+                coordOrigin: "Coordinate Origin (0,0)",
+                coordOriginFloor: "Geometric center of the ellipse / Equinox point on the central scale",
+                coordOriginWall: "Style attachment point (Apex)",
+                footerMsg: "Generated by Solaris — Gnomonic Design Software",
+                summerSolstice: "Summer Solstice (June 21, δ = +23.44°)",
+                winterSolstice: "Winter Solstice (December 21, δ = -23.44°)",
+                equinox: "Equinox (March 21 / Sept 23, δ = 0°)",
+                gnomonPointCol: "Gnomon Point",
+                coordinatesCol: "X; Y Coordinates (mm)",
+                declinationCol: "Declination (δ)",
+                shadowPointsTitle: "NODUS SHADOW POINTS AT SOLAR NOON",
+                sumShadow: "Summer Solstice Shadow (12:00)",
+                winShadow: "Winter Solstice Shadow (12:00)",
+                eqShadow: "Equinox Shadow (12:00)",
+                apexPoint: "Style Attachment Point (Apex)",
+                footPoint: "Foot of Orthostyle on wall",
+                nodusPoint: "Physical Nodus Position",
+                heightAboveWall: "Perpendicular height from wall (mm)"
+            }
+        };
+
+        const currentT = t[lang] || t['it'];
+        const titleText = mode === 'wall' ? currentT.wallTitle : currentT.floorTitle;
+
+        let paramsHTML = '';
+        let tableHoursHTML = '';
+        let gnomonHTML = '';
+
+        if (mode === 'wall') {
+            const dec = params.declination;
+            const gLen = params.gnomonLength;
+            const wallInc = params.inclination || 0;
+            const gparams = SolarisMath.calcWallGnomonParameters(lat, dec, gLen, wallInc);
+
+            paramsHTML = `
+            <div class="grid-2">
+                <div class="card">
+                    <h3>${currentT.paramsTitle}</h3>
+                    <div class="metric-row"><span class="metric-label">${currentT.latitude}:</span><span class="metric-value">${lat.toFixed(4)}°N</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.longitude}:</span><span class="metric-value">${lon.toFixed(4)}°E</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.timezone}:</span><span class="metric-value">UTC${params.timezone >= 0 ? '+' + params.timezone : params.timezone} (DST: ${params.isDst ? 'Sì/Yes' : 'No'})</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.declination}:</span><span class="metric-value">${dec.toFixed(1)}°</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.inclination}:</span><span class="metric-value">${wallInc.toFixed(1)}°</span></div>
+                </div>
+                <div class="card">
+                    <h3>${currentT.gnomonTitle}</h3>
+                    <div class="metric-row"><span class="metric-label">${currentT.polarLength}:</span><span class="metric-value">${gparams.polarLength.toFixed(1)} mm</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.orthoLength}:</span><span class="metric-value">${gparams.orthoLength.toFixed(1)} mm</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.substyleLength}:</span><span class="metric-value">${gparams.substyleLength.toFixed(1)} mm</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.styleAngle}:</span><span class="metric-value">${gparams.styleAngle.toFixed(2)}°</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.substyleAngle}:</span><span class="metric-value">${gparams.substyleAngle.toFixed(2)}°</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.h0}:</span><span class="metric-value">${gparams.h0.toFixed(2)}°</span></div>
+                </div>
+            </div>`;
+
+            const hoursList = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+            const hourAngles = hoursList.map(h => (h - 12) * 15);
+            const wallHourLines = SolarisMath.calcWallHourLines(gparams.styleAngle, gparams.h0, gparams.substyleAngle, hourAngles);
+
+            let hourRows = '';
+            wallHourLines.forEach((line, idx) => {
+                const hVal = hoursList[idx];
+                const hourAngle = line.hourAngle;
+                
+                // Summer Solstice Shadow Point
+                const sPosSum = SolarisMath.getSunPosition(lat, 23.44, hourAngle);
+                const shSum = SolarisMath.projectNodusShadowOnWall(sPosSum.altitude, sPosSum.azimuth, lat, dec, gparams, wallInc);
+                
+                // Equinox Shadow Point
+                const sPosEq = SolarisMath.getSunPosition(lat, 0.0, hourAngle);
+                const shEq = SolarisMath.projectNodusShadowOnWall(sPosEq.altitude, sPosEq.azimuth, lat, dec, gparams, wallInc);
+                
+                // Winter Solstice Shadow Point
+                const sPosWin = SolarisMath.getSunPosition(lat, -23.44, hourAngle);
+                const shWin = SolarisMath.projectNodusShadowOnWall(sPosWin.altitude, sPosWin.azimuth, lat, dec, gparams, wallInc);
+
+                const formatPt = (pt) => {
+                    if (!pt) return '—';
+                    return `X: ${pt.x.toFixed(1)}, Y: ${pt.y.toFixed(1)}`;
+                };
+
+                hourRows += `
+                <tr>
+                    <td><strong>${hVal}:00</strong></td>
+                    <td>${line.angleFromVertical.toFixed(1)}°</td>
+                    <td>${line.angleFromSubstyle.toFixed(1)}°</td>
+                    <td>${formatPt(shSum)}</td>
+                    <td>${formatPt(shEq)}</td>
+                    <td>${formatPt(shWin)}</td>
+                </tr>`;
+            });
+
+            tableHoursHTML = `
+            <div class="section-title">${currentT.tableHoursTitle}</div>
+            <p style="font-size: 11px; color: #475569; margin-top: -5px; margin-bottom: 8px;">
+                * ${currentT.coordOrigin}: <strong>${currentT.coordOriginWall}</strong>. X positivo a destra, Y positivo in basso. Valori in millimetri (mm).
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>${currentT.hourCol}</th>
+                        <th>${currentT.angleFromVertCol}</th>
+                        <th>${currentT.angleFromSubstyleCol}</th>
+                        <th>Solstizio Estate (mm)</th>
+                        <th>Equinozio (mm)</th>
+                        <th>Solstizio Inverno (mm)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${hourRows}
+                </tbody>
+            </table>`;
+
+            const sdRad = SolarisMath.degToRad(gparams.substyleAngle);
+            const footX = gparams.substyleLength * Math.sin(sdRad);
+            const footY = gparams.substyleLength * Math.cos(sdRad);
+
+            // Noon Shadows
+            const noonSum = SolarisMath.getSunPosition(lat, 23.44, 0);
+            const shNoonSum = SolarisMath.projectNodusShadowOnWall(noonSum.altitude, noonSum.azimuth, lat, dec, gparams, wallInc);
+
+            const noonEq = SolarisMath.getSunPosition(lat, 0, 0);
+            const shNoonEq = SolarisMath.projectNodusShadowOnWall(noonEq.altitude, noonEq.azimuth, lat, dec, gparams, wallInc);
+
+            const noonWin = SolarisMath.getSunPosition(lat, -23.44, 0);
+            const shNoonWin = SolarisMath.projectNodusShadowOnWall(noonWin.altitude, noonWin.azimuth, lat, dec, gparams, wallInc);
+
+            const formatPt = (pt) => {
+                if (!pt) return '—';
+                return `X: ${pt.x.toFixed(1)}, Y: ${pt.y.toFixed(1)}`;
+            };
+
+            gnomonHTML = `
+            <div class="section-title">${currentT.tableGnomonTitle}</div>
+            <div class="grid-2" style="margin-bottom: 15px;">
+                <div class="card">
+                    <h3>Gnomone Fisico (Coordinate mm)</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">${currentT.apexPoint}:</span>
+                        <span class="metric-value">X: 0.0, Y: 0.0</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">${currentT.footPoint}:</span>
+                        <span class="metric-value">X: ${footX.toFixed(1)}, Y: ${footY.toFixed(1)}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">${currentT.nodusPoint}:</span>
+                        <span class="metric-value">X: ${footX.toFixed(1)}, Y: ${footY.toFixed(1)}, Z: ${gparams.orthoLength.toFixed(1)}</span>
+                    </div>
+                    <p style="font-size: 9px; color: #64748b; margin: 5px 0 0 0;">
+                        * Z rappresenta l'altezza perpendicolare del nodulo stilo rispetto al piano della parete.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>${currentT.shadowPointsTitle}</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">${currentT.sumShadow}:</span>
+                        <span class="metric-value">${formatPt(shNoonSum)}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">${currentT.eqShadow}:</span>
+                        <span class="metric-value">${formatPt(shNoonEq)}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">${currentT.winShadow}:</span>
+                        <span class="metric-value">${formatPt(shNoonWin)}</span>
+                    </div>
+                </div>
+            </div>`;
+        } else {
+            // Floor mode
+            const aVal = params.ellipseWidth;
+            const slope = params.floorSlope || 0;
+            const slopeDir = params.floorSlopeDir || 180;
+            const geom = SolarisMath.calcFloorSundialGeometry(lat, aVal, slope, slopeDir);
+
+            paramsHTML = `
+            <div class="grid-2">
+                <div class="card">
+                    <h3>${currentT.paramsTitle}</h3>
+                    <div class="metric-row"><span class="metric-label">${currentT.latitude}:</span><span class="metric-value">${lat.toFixed(4)}°N</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.longitude}:</span><span class="metric-value">${lon.toFixed(4)}°E</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.timezone}:</span><span class="metric-value">UTC${params.timezone >= 0 ? '+' + params.timezone : params.timezone} (DST: ${params.isDst ? 'Sì/Yes' : 'No'})</span></div>
+                </div>
+                <div class="card">
+                    <h3>Parametri Ellisse & Pendenza</h3>
+                    <div class="metric-row"><span class="metric-label">${currentT.semiMajor}:</span><span class="metric-value">${aVal.toFixed(2)} m (${(aVal*1000).toFixed(0)} mm)</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.semiMinor}:</span><span class="metric-value">${geom.b.toFixed(2)} m (${(geom.b*1000).toFixed(0)} mm)</span></div>
+                    <div class="metric-row"><span class="metric-label">${currentT.slope}:</span><span class="metric-value">${slope.toFixed(1)}° vers. ${slopeDir.toFixed(0)}°</span></div>
+                    <div class="metric-row"><span class="metric-label">Inclinazione Ellisse / Rotation:</span><span class="metric-value">${(geom.rotationAngle * 180 / Math.PI).toFixed(2)}°</span></div>
+                </div>
+            </div>`;
+
+            const hoursList = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+            const hourAngles = hoursList.map(h => (h - 12) * 15);
+            const hourPoints = SolarisMath.calcFloorHourPoints(aVal, geom.b, hourAngles, geom.rotationAngle);
+
+            let hourRows = '';
+            hourPoints.forEach((pt, idx) => {
+                const hVal = hoursList[idx];
+                const xMm = pt.x * 1000;
+                const yMm = pt.y * 1000;
+                const dMm = pt.distance * 1000;
+                const angleRad = Math.atan2(pt.y, pt.x);
+                let angleDeg = angleRad * 180 / Math.PI;
+                if (angleDeg < 0) angleDeg += 360;
+
+                hourRows += `
+                <tr>
+                    <td><strong>${hVal}:00</strong></td>
+                    <td>${angleDeg.toFixed(1)}°</td>
+                    <td>${xMm.toFixed(1)}</td>
+                    <td>${yMm.toFixed(1)}</td>
+                    <td>${dMm.toFixed(1)}</td>
+                </tr>`;
+            });
+
+            tableHoursHTML = `
+            <div class="section-title">${currentT.tableHoursTitle}</div>
+            <p style="font-size: 11px; color: #475569; margin-top: -5px; margin-bottom: 8px;">
+                * ${currentT.coordOrigin}: <strong>${currentT.coordOriginFloor}</strong>. Coordinate X (Est-Ovest) e Y (Nord-Sud) espresse in millimetri (mm) dal centro.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>${currentT.hourCol}</th>
+                        <th>${currentT.angleCol} (Est-0°)</th>
+                        <th>X (mm)</th>
+                        <th>Y (mm)</th>
+                        <th>${currentT.distCol} (mm)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${hourRows}
+                </tbody>
+            </table>`;
+
+            const dVals = [
+                { name: currentT.summerSolstice, v: 23.44 },
+                { name: currentT.equinox, v: 0.0 },
+                { name: currentT.winterSolstice, v: -23.44 }
+            ];
+
+            let gnomonRows = '';
+            dVals.forEach(d => {
+                const offset = SolarisMath.calcFloorGnomonOffset(aVal, geom.phiVirt, d.v, geom.rotationAngle);
+                const xMm = offset.x * 1000;
+                const yMm = offset.y * 1000;
+                const zMm = offset.z_virt * 1000;
+                const angleRad = Math.atan2(offset.y, offset.x);
+                let angleDeg = angleRad * 180 / Math.PI;
+                if (angleDeg < 0) angleDeg += 360;
+                if (Math.abs(xMm) < 0.01 && Math.abs(yMm) < 0.01) angleDeg = 0;
+
+                gnomonRows += `
+                <tr>
+                    <td><strong>${d.name}</strong></td>
+                    <td>${d.v.toFixed(2)}°</td>
+                    <td>${angleDeg.toFixed(1)}°</td>
+                    <td>${xMm.toFixed(1)}</td>
+                    <td>${yMm.toFixed(1)}</td>
+                    <td>${zMm.toFixed(1)}</td>
+                </tr>`;
+            });
+
+            gnomonHTML = `
+            <div class="section-title">${currentT.tableGnomonTitle}</div>
+            <p style="font-size: 11px; color: #475569; margin-top: -5px; margin-bottom: 8px;">
+                * Posizione della persona (gnomone) lungo la scala calendariale a seconda del periodo dell'anno. Coordinate in millimetri (mm) dal centro.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>${currentT.gnomonPointCol}</th>
+                        <th>${currentT.declinationCol}</th>
+                        <th>${currentT.angleCol}</th>
+                        <th>X (mm)</th>
+                        <th>Y (mm)</th>
+                        <th>Offset Z virtuale (mm)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${gnomonRows}
+                </tbody>
+            </table>`;
+        }
+
+        const svgStr = SolarisRenderer.generateSVG(mode, params, new Date(dateStr), lang).replace(/<\?xml[^>]*\?>/, '');
+
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Solaris Technical Report - ${titleText}</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap');
+                
+                @page {
+                    size: A4;
+                    margin: 15mm 15mm 15mm 15mm;
+                }
+                body {
+                    font-family: 'Outfit', sans-serif;
+                    color: #1e293b;
+                    background-color: #ffffff;
+                    line-height: 1.4;
+                    margin: 0;
+                    padding: 0;
+                }
+                .header {
+                    border-bottom: 2px solid #b45309;
+                    padding-bottom: 8px;
+                    margin-bottom: 15px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                }
+                .logo {
+                    font-family: 'Space Grotesk', sans-serif;
+                    font-size: 26px;
+                    font-weight: 700;
+                    color: #b45309;
+                    letter-spacing: 1px;
+                }
+                .doc-title {
+                    font-size: 14px;
+                    color: #475569;
+                    font-weight: 500;
+                    text-align: right;
+                }
+                .section-title {
+                    font-family: 'Space Grotesk', sans-serif;
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #1e293b;
+                    margin-top: 20px;
+                    margin-bottom: 8px;
+                    border-left: 4px solid #b45309;
+                    padding-left: 8px;
+                    page-break-after: avoid;
+                }
+                .grid-2 {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                }
+                .card {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 12px;
+                    font-size: 11px;
+                }
+                .card h3 {
+                    margin-top: 0;
+                    margin-bottom: 8px;
+                    color: #b45309;
+                    font-size: 13px;
+                    border-bottom: 1px solid #cbd5e1;
+                    padding-bottom: 4px;
+                }
+                .metric-row {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 4px;
+                }
+                .metric-label {
+                    color: #64748b;
+                    font-weight: 500;
+                }
+                .metric-value {
+                    font-weight: 700;
+                    color: #0f172a;
+                }
+                .drawing-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin: 15px 0;
+                    border: 1px dashed #cbd5e1;
+                    border-radius: 8px;
+                    padding: 10px;
+                    background: #ffffff;
+                    page-break-inside: avoid;
+                }
+                .drawing-container svg {
+                    width: 100%;
+                    max-width: 480px;
+                    height: auto;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 10px;
+                    margin-top: 8px;
+                    page-break-inside: avoid;
+                }
+                th {
+                    background-color: #f1f5f9;
+                    color: #475569;
+                    font-weight: 600;
+                    text-align: left;
+                    border-bottom: 2px solid #cbd5e1;
+                    padding: 5px 6px;
+                }
+                td {
+                    padding: 5px 6px;
+                    border-bottom: 1px solid #e2e8f0;
+                    color: #334155;
+                }
+                tr:nth-child(even) td {
+                    background-color: #f8fafc;
+                }
+                .footer {
+                    margin-top: 25px;
+                    font-size: 9px;
+                    color: #94a3b8;
+                    text-align: center;
+                    border-top: 1px solid #e2e8f0;
+                    padding-top: 8px;
+                    page-break-before: avoid;
+                }
+                .page-break {
+                    page-break-before: always;
+                }
+                
+                @media print {
+                    body {
+                        background: white;
+                        color: black;
+                    }
+                    .no-print {
+                        display: none;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">SOLARIS</div>
+                <div class="doc-title">${currentT.title}<br><span style="font-weight: normal; font-size: 11px;">${titleText}</span></div>
+            </div>
+
+            ${paramsHTML}
+
+            <div class="drawing-container">
+                ${svgStr}
+            </div>
+
+            <div class="page-break"></div>
+
+            <div class="header">
+                <div class="logo">SOLARIS</div>
+                <div class="doc-title">${currentT.title}<br><span style="font-weight: normal; font-size: 11px;">${titleText}</span></div>
+            </div>
+
+            ${gnomonHTML}
+
+            ${tableHoursHTML}
+
+            <div class="footer">
+                ${currentT.footerMsg} — ${new Date().toLocaleDateString(lang)}
+            </div>
+
+            <script>
+                window.onload = function() {
+                    setTimeout(() => {
+                        window.print();
+                    }, 500);
+                };
+            <\/script>
+        </body>
+        </html>`;
+
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.open();
+            printWindow.document.write(html);
+            printWindow.document.close();
+        } else {
+            alert(lang === 'it' ? 'Impossibile aprire la finestra di stampa. Controlla il blocco popup.' : 'Unable to open print window. Please check your popup blocker.');
+        }
     }
 };
 
