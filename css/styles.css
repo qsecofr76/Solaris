@@ -855,3 +855,26 @@ input[type="date"] {
         height: 360px;
     }
 }
+
+/* Stili di Stampa per report in-page */
+@media screen {
+    #print-report {
+        display: none !important;
+    }
+}
+
+@media print {
+    /* Nasconde completamente l'interfaccia dell'applicazione SPA */
+    body > *:not(#print-report) {
+        display: none !important;
+    }
+    /* Mostra esclusivamente il report */
+    #print-report {
+        display: block !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}

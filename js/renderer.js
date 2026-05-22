@@ -980,6 +980,54 @@ const SolarisRenderer = {
         }).join('');
     })()}
 
+    ${(() => {
+        const ox = 400;
+        const oy = 350;
+        const civilHours = params.timeMinutes !== undefined ? params.timeMinutes / 60 : (date.getHours() + date.getMinutes() / 60);
+        const solarHours = SolarisMath.civilToSolarTime(civilHours, lon, tz, eot, isDst);
+        const hourAngle = (solarHours - 12) * 15;
+        const sunPos = SolarisMath.getSunPosition(lat, solarDec, hourAngle);
+        
+        const hoursCivil = Math.floor(civilHours);
+        const minsCivil = Math.round((civilHours % 1) * 60);
+        const timeStr = `${String(hoursCivil).padStart(2, '0')}:${String(minsCivil).padStart(2, '0')}`;
+
+        const currentShadow = SolarisMath.projectNodusShadowOnWall(sunPos.altitude, sunPos.azimuth, lat, dec, gparams, params.inclination || 0);
+
+        if (currentShadow) {
+            const shx = ox + currentShadow.x * mmToPx;
+            const shy = oy + currentShadow.y * mmToPx;
+            const sdRad = SolarisMath.degToRad(gparams.substyleAngle);
+            const footX = ox + (gparams.substyleLength * mmToPx) * Math.sin(sdRad);
+            const footY = oy + (gparams.substyleLength * mmToPx) * Math.cos(sdRad);
+
+            const theta = Math.atan2(currentShadow.x, currentShadow.y) * 180 / Math.PI;
+            const absTheta = Math.abs(theta);
+            let angleLabel = "";
+            if (Math.abs(currentShadow.x) < 0.01) {
+                angleLabel = `0.0° (${lang === 'it' ? 'Sud' : 'South'})`;
+            } else if (currentShadow.x > 0) {
+                angleLabel = `${absTheta.toFixed(1)}° ${lang === 'it' ? 'Ovest' : 'West'}`;
+            } else {
+                angleLabel = `${absTheta.toFixed(1)}° ${lang === 'it' ? 'Est' : 'East'}`;
+            }
+
+            return `
+    <!-- Ombra attiva simulata (Orario: ${timeStr}) -->
+    <g id="simulated-active-shadow">
+      <line x1="${ox}" y1="${oy}" x2="${shx.toFixed(1)}" y2="${shy.toFixed(1)}" stroke="#4b5563" stroke-width="4" stroke-linecap="round" opacity="0.65" />
+      <line x1="${footX.toFixed(1)}" y1="${footY.toFixed(1)}" x2="${shx.toFixed(1)}" y2="${shy.toFixed(1)}" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" opacity="0.65" />
+      <circle cx="${shx.toFixed(1)}" cy="${shy.toFixed(1)}" r="4.5" fill="#ffffff" stroke="#b45309" stroke-width="1.5" />
+      <rect x="${(shx + 10).toFixed(1)}" y="${(shy - 16).toFixed(1)}" width="145" height="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.5" rx="3" opacity="0.9" />
+      <text x="${(shx + 15).toFixed(1)}" y="${(shy - 3).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#b45309">☀️ ${timeStr} (${angleLabel})</text>
+    </g>`;
+        } else {
+            return `
+    <!-- Muro in ombra o sole sotto l'orizzonte -->
+    <text x="400" y="630" font-family="'Space Grotesk', sans-serif" font-size="11" fill="#ef4444" font-weight="bold" text-anchor="middle">${lang === 'it' ? 'PARETE IN OMBRA O SOLE SOTTO L\'ORIZZONTE' : 'WALL IN SHADOW OR SUN BELOW HORIZON'}</text>`;
+        }
+    })()}
+
   </g>
 </svg>`;
         } else {
@@ -1076,6 +1124,92 @@ const SolarisRenderer = {
       <line x1="50" y1="5" x2="50" y2="15" stroke="#333333" stroke-width="1" />
       <text x="25" y="0" text-anchor="middle">1.0 m</text>
     </g>
+
+    ${(() => {
+        const civilHours = params.timeMinutes !== undefined ? params.timeMinutes / 60 : (date.getHours() + date.getMinutes() / 60);
+        const solarHours = SolarisMath.civilToSolarTime(civilHours, lon, tz, eot, isDst);
+        const hourAngle = (solarHours - 12) * 15;
+        const sunPos = SolarisMath.getSunPosition(lat, solarDec, hourAngle);
+        
+        const hoursCivil = Math.floor(civilHours);
+        const minsCivil = Math.round((civilHours % 1) * 60);
+        const timeStr = `${String(hoursCivil).padStart(2, '0')}:${String(minsCivil).padStart(2, '0')}`;
+
+        const zOffset = SolarisMath.calcFloorGnomonOffset(aVal, geom.phiVirt, solarDec, geom.rotationAngle);
+        const personX = 400 + zOffset.x * scalePxPerM;
+        const personY = 350 - zOffset.y * scalePxPerM;
+
+        if (sunPos.altitude > 0) {
+            const hPerson = params.personHeight !== undefined ? params.personHeight : 1.70;
+            const shadowTip = SolarisMath.projectVerticalShadowOnSlope(
+                zOffset.x, zOffset.y, hPerson,
+                sunPos.altitude, sunPos.azimuth,
+                lat, slope, slopeDir
+            );
+
+            if (shadowTip) {
+                const shTipX = 400 + shadowTip.x * scalePxPerM;
+                const shTipY = 350 - shadowTip.y * scalePxPerM;
+
+                const dx = shadowTip.x - zOffset.x;
+                const dy = shadowTip.y - zOffset.y;
+                const angleRad = Math.atan2(dx, dy);
+                let angleDeg = angleRad * 180 / Math.PI;
+                if (angleDeg < -180) angleDeg += 360;
+                if (angleDeg > 180) angleDeg -= 360;
+
+                let northSouth = "N";
+                let eastWest = "E";
+                let val = 0;
+
+                if (dy >= 0) {
+                    northSouth = "N";
+                    if (dx >= 0) {
+                        eastWest = "E";
+                        val = angleDeg;
+                    } else {
+                        eastWest = lang === 'it' ? "O" : "W";
+                        val = -angleDeg;
+                    }
+                } else {
+                    northSouth = "S";
+                    if (dx >= 0) {
+                        eastWest = "E";
+                        val = 180 - angleDeg;
+                    } else {
+                        eastWest = lang === 'it' ? "O" : "W";
+                        val = 180 + angleDeg;
+                    }
+                }
+                const bearingText = `${northSouth} ${val.toFixed(1)}° ${eastWest}`;
+
+                const len = Math.sqrt(dx*dx + dy*dy);
+                let extLine = '';
+                if (len > 0.001) {
+                    const extX = personX + (dx / len) * 800;
+                    const extY = personY - (dy / len) * 800;
+                    extLine = `<line x1="${personX.toFixed(1)}" y1="${personY.toFixed(1)}" x2="${extX.toFixed(1)}" y2="${extY.toFixed(1)}" stroke="#000000" stroke-width="0.75" stroke-dasharray="2,4" opacity="0.3" />`;
+                }
+
+                return `
+    <!-- Ombra attiva simulata (Persona) -->
+    <g id="simulated-active-shadow">
+      ${extLine}
+      <line x1="${personX.toFixed(1)}" y1="${personY.toFixed(1)}" x2="${shTipX.toFixed(1)}" y2="${shTipY.toFixed(1)}" stroke="#4b5563" stroke-width="8" stroke-linecap="round" opacity="0.5" />
+      <circle cx="${personX.toFixed(1)}" cy="${personY.toFixed(1)}" r="6" fill="#ffffff" stroke="#b45309" stroke-width="2" />
+      <text x="${personX.toFixed(1)}" y="${personY.toFixed(1)}" font-family="'Outfit', sans-serif" font-size="8" font-weight="bold" fill="#000000" text-anchor="middle" dominant-baseline="middle">👤</text>
+      <text x="${(personX - 10).toFixed(1)}" y="${personY.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#b45309" text-anchor="end" dominant-baseline="middle">${lang === 'it' ? 'Tu ti trovi qui (Gnomone Umano)' : 'You stand here (Human Gnomon)'}</text>
+      <rect x="${(shTipX + 8).toFixed(1)}" y="${(shTipY - 14).toFixed(1)}" width="130" height="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.5" rx="3" opacity="0.9" />
+      <text x="${(shTipX + 13).toFixed(1)}" y="${(shTipY - 2).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" fill="#000000" font-weight="bold">☀️ ${timeStr} (${bearingText})</text>
+    </g>`;
+            }
+        } else {
+            return `
+    <!-- Sole sotto l'orizzonte -->
+    <text x="400" y="630" font-family="'Space Grotesk', sans-serif" font-size="11" fill="#ef4444" font-weight="bold" text-anchor="middle">${lang === 'it' ? 'SOLE SOTTO L\'ORIZZONTE' : 'SUN BELOW HORIZON'}</text>`;
+        }
+        return '';
+    })()}
   </g>
 </svg>`;
         }
@@ -1169,7 +1303,10 @@ const SolarisRenderer = {
     /**
      * GENERATORE DI REPORT TECNICO IN FORMATO PDF
      */
-    exportToPDF: (mode, params, lang = "it") => {
+    /**
+     * COSTRUISCE IL CONTENUTO HTML E CSS DEL REPORT TECNICO (CONDIVISO)
+     */
+    buildReportHTML: (mode, params, lang = "it") => {
         const lat = params.latitude;
         const lon = params.longitude;
         const dateStr = params.date || new Date().toISOString().split('T')[0];
@@ -1539,156 +1676,150 @@ const SolarisRenderer = {
 
         const svgStr = SolarisRenderer.generateSVG(mode, params, new Date(dateStr), lang).replace(/<\?xml[^>]*\?>/, '');
 
-        const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>Solaris Technical Report - ${titleText}</title>
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap');
-                
-                @page {
-                    size: A4;
-                    margin: 15mm 15mm 15mm 15mm;
-                }
+        const styleBlock = `
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap');
+            
+            @page {
+                size: A4;
+                margin: 15mm 15mm 15mm 15mm;
+            }
+            body {
+                font-family: 'Outfit', sans-serif;
+                color: #1e293b;
+                background-color: #ffffff;
+                line-height: 1.4;
+                margin: 0;
+                padding: 0;
+            }
+            .header {
+                border-bottom: 2px solid #b45309;
+                padding-bottom: 8px;
+                margin-bottom: 15px;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+            .logo {
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: 26px;
+                font-weight: 700;
+                color: #b45309;
+                letter-spacing: 1px;
+            }
+            .doc-title {
+                font-size: 14px;
+                color: #475569;
+                font-weight: 500;
+                text-align: right;
+            }
+            .section-title {
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: 16px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-top: 20px;
+                margin-bottom: 8px;
+                border-left: 4px solid #b45309;
+                padding-left: 8px;
+                page-break-after: avoid;
+            }
+            .grid-2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .card {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 12px;
+                font-size: 11px;
+            }
+            .card h3 {
+                margin-top: 0;
+                margin-bottom: 8px;
+                color: #b45309;
+                font-size: 13px;
+                border-bottom: 1px solid #cbd5e1;
+                padding-bottom: 4px;
+            }
+            .metric-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 4px;
+            }
+            .metric-label {
+                color: #64748b;
+                font-weight: 500;
+            }
+            .metric-value {
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .drawing-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 15px 0;
+                border: 1px dashed #cbd5e1;
+                border-radius: 8px;
+                padding: 10px;
+                background: #ffffff;
+                page-break-inside: avoid;
+            }
+            .drawing-container svg {
+                width: 100%;
+                max-width: 480px;
+                height: auto;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 10px;
+                margin-top: 8px;
+                page-break-inside: avoid;
+            }
+            th {
+                background-color: #f1f5f9;
+                color: #475569;
+                font-weight: 600;
+                text-align: left;
+                border-bottom: 2px solid #cbd5e1;
+                padding: 5px 6px;
+            }
+            td {
+                padding: 5px 6px;
+                border-bottom: 1px solid #e2e8f0;
+                color: #334155;
+            }
+            tr:nth-child(even) td {
+                background-color: #f8fafc;
+            }
+            .footer {
+                margin-top: 25px;
+                font-size: 9px;
+                color: #94a3b8;
+                text-align: center;
+                border-top: 1px solid #e2e8f0;
+                padding-top: 8px;
+                page-break-before: avoid;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            
+            @media print {
                 body {
-                    font-family: 'Outfit', sans-serif;
-                    color: #1e293b;
-                    background-color: #ffffff;
-                    line-height: 1.4;
-                    margin: 0;
-                    padding: 0;
+                    background: white;
+                    color: black;
                 }
-                .header {
-                    border-bottom: 2px solid #b45309;
-                    padding-bottom: 8px;
-                    margin-bottom: 15px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-end;
+                .no-print {
+                    display: none;
                 }
-                .logo {
-                    font-family: 'Space Grotesk', sans-serif;
-                    font-size: 26px;
-                    font-weight: 700;
-                    color: #b45309;
-                    letter-spacing: 1px;
-                }
-                .doc-title {
-                    font-size: 14px;
-                    color: #475569;
-                    font-weight: 500;
-                    text-align: right;
-                }
-                .section-title {
-                    font-family: 'Space Grotesk', sans-serif;
-                    font-size: 16px;
-                    font-weight: 700;
-                    color: #1e293b;
-                    margin-top: 20px;
-                    margin-bottom: 8px;
-                    border-left: 4px solid #b45309;
-                    padding-left: 8px;
-                    page-break-after: avoid;
-                }
-                .grid-2 {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 15px;
-                }
-                .card {
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 12px;
-                    font-size: 11px;
-                }
-                .card h3 {
-                    margin-top: 0;
-                    margin-bottom: 8px;
-                    color: #b45309;
-                    font-size: 13px;
-                    border-bottom: 1px solid #cbd5e1;
-                    padding-bottom: 4px;
-                }
-                .metric-row {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 4px;
-                }
-                .metric-label {
-                    color: #64748b;
-                    font-weight: 500;
-                }
-                .metric-value {
-                    font-weight: 700;
-                    color: #0f172a;
-                }
-                .drawing-container {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    margin: 15px 0;
-                    border: 1px dashed #cbd5e1;
-                    border-radius: 8px;
-                    padding: 10px;
-                    background: #ffffff;
-                    page-break-inside: avoid;
-                }
-                .drawing-container svg {
-                    width: 100%;
-                    max-width: 480px;
-                    height: auto;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 10px;
-                    margin-top: 8px;
-                    page-break-inside: avoid;
-                }
-                th {
-                    background-color: #f1f5f9;
-                    color: #475569;
-                    font-weight: 600;
-                    text-align: left;
-                    border-bottom: 2px solid #cbd5e1;
-                    padding: 5px 6px;
-                }
-                td {
-                    padding: 5px 6px;
-                    border-bottom: 1px solid #e2e8f0;
-                    color: #334155;
-                }
-                tr:nth-child(even) td {
-                    background-color: #f8fafc;
-                }
-                .footer {
-                    margin-top: 25px;
-                    font-size: 9px;
-                    color: #94a3b8;
-                    text-align: center;
-                    border-top: 1px solid #e2e8f0;
-                    padding-top: 8px;
-                    page-break-before: avoid;
-                }
-                .page-break {
-                    page-break-before: always;
-                }
-                
-                @media print {
-                    body {
-                        background: white;
-                        color: black;
-                    }
-                    .no-print {
-                        display: none;
-                    }
-                }
-            </style>
-        </head>
-        <body>
+            }
+        `;
+
+        const bodyHTML = `
             <div class="header">
                 <div class="logo">SOLARIS</div>
                 <div class="doc-title">${currentT.title}<br><span style="font-weight: normal; font-size: 11px;">${titleText}</span></div>
@@ -1714,25 +1845,76 @@ const SolarisRenderer = {
             <div class="footer">
                 ${currentT.footerMsg} — ${new Date().toLocaleDateString(lang)}
             </div>
+        `;
 
-            <script>
-                window.onload = function() {
-                    setTimeout(() => {
-                        window.print();
-                    }, 500);
-                };
-            <\/script>
-        </body>
-        </html>`;
+        return {
+            titleText: titleText,
+            styleBlock: styleBlock,
+            bodyHTML: bodyHTML
+        };
+    },
 
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.open();
-            printWindow.document.write(html);
-            printWindow.document.close();
+    /**
+     * GENERATORE DI REPORT TECNICO IN FORMATO PDF (STAMPA IN-PAGE DIRETTA)
+     */
+    exportToPDF: (mode, params, lang = "it") => {
+        const report = SolarisRenderer.buildReportHTML(mode, params, lang);
+        
+        const html = `
+            <style>${report.styleBlock}</style>
+            ${report.bodyHTML}
+        `;
+
+        const printDiv = document.getElementById('print-report');
+        if (printDiv) {
+            printDiv.innerHTML = html;
+            
+            // Ripristina l'interfaccia originale dopo la stampa
+            const cleanUp = () => {
+                printDiv.innerHTML = '';
+            };
+            
+            window.addEventListener('afterprint', cleanUp, { once: true });
+            
+            // Lancia la stampa del browser in-page bypassando popup blocker
+            window.print();
         } else {
-            alert(lang === 'it' ? 'Impossibile aprire la finestra di stampa. Controlla il blocco popup.' : 'Unable to open print window. Please check your popup blocker.');
+            console.error('print-report container not found in DOM');
         }
+    },
+
+    /**
+     * ESPORTATORE DEL REPORT IN FORMATO HTML STANDALONE SCARICABILE
+     */
+    exportToHTML: (mode, params, lang = "it") => {
+        const report = SolarisRenderer.buildReportHTML(mode, params, lang);
+        
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Solaris Technical Report - ${report.titleText}</title>
+    <style>${report.styleBlock}</style>
+</head>
+<body>
+    ${report.bodyHTML}
+</body>
+</html>`;
+
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Solaris_${mode}_report.html`;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Pulizia ritardata per garantire l'avvio del download
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
     }
 };
 

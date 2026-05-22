@@ -262,6 +262,9 @@
                             <button id="btn-export-pdf" class="btn btn-gold">
                                 <span class="icon">📄</span> <span data-i18n="export-pdf">Esporta PDF</span>
                             </button>
+                            <button id="btn-export-html" class="btn btn-gold">
+                                <span class="icon">🌐</span> <span data-i18n="export-html">Esporta HTML</span>
+                            </button>
                         </div>
                     </div>
 
@@ -300,6 +303,10 @@
                         <div class="metric-row">
                             <span class="metric-label" data-i18n="solar-dec">Declinazione Solare:</span>
                             <span class="metric-value" id="metric-solar-dec">+23.44&deg;</span>
+                        </div>
+                        <div class="metric-row" id="row-shadow-angle">
+                            <span class="metric-label" data-i18n="shadow-angle">Angolo dell'Ombra:</span>
+                            <span class="metric-value highlight" id="metric-shadow-angle">—</span>
                         </div>
                     </div>
 
@@ -422,6 +429,8 @@
             </main>
         </div>
     </div>
+
+    <div id="print-report"></div>
 
     <!-- Scripts -->
     <script src="js/math.js"></script>

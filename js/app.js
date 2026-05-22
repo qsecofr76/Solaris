@@ -78,7 +78,9 @@ const SolarisTranslations = {
         "north": "Nord",
         "south": "Sud",
         "east": "Est",
-        "west": "Ovest"
+        "west": "Ovest",
+        "shadow-angle": "Angolo dell'Ombra:",
+        "export-html": "Esporta HTML"
     },
     en: {
         "tagline": "Sundial Calculator and Designer",
@@ -154,7 +156,9 @@ const SolarisTranslations = {
         "north": "North",
         "south": "South",
         "east": "East",
-        "west": "West"
+        "west": "West",
+        "shadow-angle": "Shadow Angle:",
+        "export-html": "Export HTML"
     }
 };
 
@@ -443,6 +447,11 @@ const SolarisApp = {
             SolarisRenderer.exportToPDF(SolarisApp.state.mode, SolarisApp.state, SolarisApp.state.lang);
         });
 
+        // Esportazione HTML Standalone
+        document.getElementById('btn-export-html').addEventListener('click', () => {
+            SolarisRenderer.exportToHTML(SolarisApp.state.mode, SolarisApp.state, SolarisApp.state.lang);
+        });
+
         // Esportazione CSV
         document.getElementById('btn-export-csv').addEventListener('click', () => {
             const csvStr = SolarisRenderer.exportToCSV(SolarisApp.state.mode, SolarisApp.state, SolarisApp.state.lang);
@@ -669,6 +678,94 @@ const SolarisApp = {
         document.getElementById('metric-sun-alt').innerHTML = `${sunPos.altitude.toFixed(1)}&deg;`;
         document.getElementById('metric-sun-az').innerHTML = `${sunPos.azimuth.toFixed(1)}&deg;`;
         document.getElementById('metric-solar-dec').innerHTML = `${solarDec > 0 ? '+' : ''}${solarDec.toFixed(2)}&deg;`;
+
+        // Calcolo dell'angolo dell'ombra in tempo reale
+        const mode = SolarisApp.state.mode;
+        const lat = SolarisApp.state.latitude;
+        const lang = SolarisApp.state.lang;
+        let shadowAngleText = "—";
+
+        if (mode === 'wall') {
+            const dec = SolarisApp.state.declination;
+            const inc = SolarisApp.state.inclination || 0;
+            const gLen = SolarisApp.state.gnomonLength;
+            const gparams = SolarisMath.calcWallGnomonParameters(lat, dec, gLen, inc);
+            const currentShadow = SolarisMath.projectNodusShadowOnWall(sunPos.altitude, sunPos.azimuth, lat, dec, gparams, inc);
+
+            if (currentShadow) {
+                // Angolo rispetto alla verticale dell'Apex (Y positivo in basso)
+                // theta = Math.atan2(X, Y) * 180 / Math.PI
+                const theta = Math.atan2(currentShadow.x, currentShadow.y) * 180 / Math.PI;
+                const absTheta = Math.abs(theta);
+                if (Math.abs(currentShadow.x) < 0.01) {
+                    shadowAngleText = `0.0° (${lang === 'it' ? 'Sud' : 'South'})`;
+                } else if (currentShadow.x > 0) {
+                    shadowAngleText = `${absTheta.toFixed(1)}° ${lang === 'it' ? 'Ovest (da Sud)' : 'West (from South)'}`;
+                } else {
+                    shadowAngleText = `${absTheta.toFixed(1)}° ${lang === 'it' ? 'Est (da Sud)' : 'East (from South)'}`;
+                }
+            } else {
+                shadowAngleText = lang === 'it' ? "Muro in ombra" : "Wall in shadow";
+            }
+        } else {
+            // Pavimento
+            const aVal = SolarisApp.state.ellipseWidth;
+            const slope = SolarisApp.state.floorSlope || 0;
+            const slopeDir = SolarisApp.state.floorSlopeDir || 180;
+            const geom = SolarisMath.calcFloorSundialGeometry(lat, aVal, slope, slopeDir);
+            const zOffset = SolarisMath.calcFloorGnomonOffset(aVal, geom.phiVirt, solarDec, geom.rotationAngle);
+            const hPerson = SolarisApp.state.personHeight !== undefined ? SolarisApp.state.personHeight : 1.70;
+
+            if (sunPos.altitude > 0) {
+                const shadowTip = SolarisMath.projectVerticalShadowOnSlope(
+                    zOffset.x, zOffset.y, hPerson,
+                    sunPos.altitude, sunPos.azimuth,
+                    lat, slope, slopeDir
+                );
+
+                if (shadowTip) {
+                    // Direzione ombra dal piede (zOffset) alla punta (shadowTip)
+                    const dx = shadowTip.x - zOffset.x;
+                    const dy = shadowTip.y - zOffset.y;
+                    
+                    const angleRad = Math.atan2(dx, dy); // Angolo da Nord (+Y) verso Est (+X)
+                    let angleDeg = angleRad * 180 / Math.PI;
+                    if (angleDeg < -180) angleDeg += 360;
+                    if (angleDeg > 180) angleDeg -= 360;
+
+                    let northSouth = "N";
+                    let eastWest = "E";
+                    let val = 0;
+
+                    if (dy >= 0) {
+                        northSouth = "N";
+                        if (dx >= 0) {
+                            eastWest = "E";
+                            val = angleDeg;
+                        } else {
+                            eastWest = lang === 'it' ? "O" : "W";
+                            val = -angleDeg;
+                        }
+                    } else {
+                        northSouth = "S";
+                        if (dx >= 0) {
+                            eastWest = "E";
+                            val = 180 - angleDeg;
+                        } else {
+                            eastWest = lang === 'it' ? "O" : "W";
+                            val = 180 + angleDeg;
+                        }
+                    }
+                    shadowAngleText = `${northSouth} ${val.toFixed(1)}° ${eastWest}`;
+                } else {
+                    shadowAngleText = lang === 'it' ? "Nessuna ombra" : "No shadow";
+                }
+            } else {
+                shadowAngleText = lang === 'it' ? "Sole sotto l'orizzonte" : "Sun below horizon";
+            }
+        }
+
+        document.getElementById('metric-shadow-angle').innerText = shadowAngleText;
     },
 
     /**
