@@ -75,7 +75,6 @@ const SolarisRenderer = {
             ctx.arc(cx, cy, r, 0, 2 * Math.PI);
             ctx.stroke();
         }
-
         // Centro della meridiana (origine dei calcoli)
         // Posizioniamo l'origine (il punto di attacco dello gnomone) leggermente in alto per lasciare spazio sotto
         const ox = cx;
@@ -84,6 +83,10 @@ const SolarisRenderer = {
         // Scala di disegno: vogliamo far entrare una meridiana di raggio ~180px nel viewport
         // Usiamo un raggio di riferimento per disegnare le linee orarie
         const R_ref = Math.min(width, height) * 0.38;
+
+        // Definiamo un fattore di scala per i millimetri reali a pixel sul canvas
+        // gparams.polarLength (es. 200mm) viene mappato a circa 0.45 * R_ref pixel
+        const mmToPx = (0.45 * R_ref) / gparams.polarLength;
 
         // 2. Disegna le linee orarie solari (dalle 6:00 alle 18:00)
         const hoursList = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
@@ -112,7 +115,42 @@ const SolarisRenderer = {
             
             const isValidOnWall = (dummyProj !== null);
 
-            // Se la linea non è illuminabile con questo orientamento di parete, la disegniamo molto debole o la omettiamo
+            // Calcola i punti d'ombra al solstizio d'inverno (-23.44) e d'estate (23.44) per il clipping delle linee
+            const sPosWin = SolarisMath.getSunPosition(lat, -23.44, line.hourAngle);
+            const shWin = SolarisMath.projectNodusShadowOnWall(sPosWin.altitude, sPosWin.azimuth, lat, dec, gparams, params.inclination);
+
+            const sPosSum = SolarisMath.getSunPosition(lat, 23.44, line.hourAngle);
+            const shSum = SolarisMath.projectNodusShadowOnWall(sPosSum.altitude, sPosSum.azimuth, lat, dec, gparams, params.inclination);
+
+            // Se entrambi sono null, significa che il sole non illumina mai la parete a quest'ora durante l'anno
+            if (!shWin && !shSum) return;
+
+            // Calcoliamo le distanze dall'Apex in pixel
+            const dWin = shWin ? Math.sqrt(shWin.x * shWin.x + shWin.y * shWin.y) * mmToPx : null;
+            const dSum = shSum ? Math.sqrt(shSum.x * shSum.x + shSum.y * shSum.y) * mmToPx : null;
+
+            let dStart = R_ref * 0.15;
+            let dEnd = R_ref * 1.25;
+
+            if (dWin !== null && dSum !== null) {
+                dStart = Math.min(dWin, dSum);
+                dEnd = Math.max(dWin, dSum);
+            } else if (dSum !== null) {
+                dStart = R_ref * 0.15;
+                dEnd = dSum;
+            } else if (dWin !== null) {
+                dStart = R_ref * 0.15;
+                dEnd = dWin;
+            }
+
+            // Applichiamo i limiti per evitare che vadano fuori dal quadrante
+            const dEndClipped = Math.min(dEnd, R_ref * 1.25);
+            const dStartClipped = Math.min(dStart, R_ref * 1.2);
+
+            // Se per qualche motivo geometrico anomalo dStart >= dEnd, saltiamo
+            if (dStartClipped >= dEndClipped) return;
+
+            // Se la linea non è illuminabile alla data selezionata, la disegniamo molto tenue
             if (!isValidOnWall) {
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
@@ -121,28 +159,28 @@ const SolarisRenderer = {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             }
 
-            // Calcola coordinata di arrivo della linea oraria
-            const lx = ox + R_ref * Math.sin(thetaRad);
-            const ly = oy + R_ref * Math.cos(thetaRad); // Y va in giù, cos(theta) va in giù per theta=0
+            // Calcola le coordinate reali sul canvas del segmento orario
+            const lx1 = ox + dStartClipped * Math.sin(thetaRad);
+            const ly1 = oy + dStartClipped * Math.cos(thetaRad);
+            const lx2 = ox + dEndClipped * Math.sin(thetaRad);
+            const ly2 = oy + dEndClipped * Math.cos(thetaRad);
 
-            // Disegna raggio orario
+            // Disegna il segmento orario limitato tra i solstizi
             ctx.beginPath();
-            ctx.moveTo(ox, oy);
-            ctx.lineTo(lx, ly);
+            ctx.moveTo(lx1, ly1);
+            ctx.lineTo(lx2, ly2);
             ctx.stroke();
 
-            // Scrivi etichetta dell'ora
-            const labelDist = R_ref + 18;
+            // Scrivi etichetta dell'ora (posizionata appena oltre la fine della linea, seguendo la curva del solstizio)
+            const labelDist = dEndClipped + 18;
             const tx = ox + labelDist * Math.sin(thetaRad);
             const ty = oy + labelDist * Math.cos(thetaRad);
 
             ctx.save();
             ctx.translate(tx, ty);
-            // Ruota il testo per seguire il raggio (opzionale, ma elegante se mantenuto leggibile)
-            // Se l'angolo è forte, raddrizziamo il testo
             let textRotation = thetaRad;
-            if (textRotation > Math.PI/2) textRotation -= Math.PI;
-            if (textRotation < -Math.PI/2) textRotation += Math.PI;
+            if (textRotation > Math.PI / 2) textRotation -= Math.PI;
+            if (textRotation < -Math.PI / 2) textRotation += Math.PI;
             ctx.rotate(textRotation);
             
             // Metti in risalto il mezzogiorno (XII)
@@ -154,22 +192,118 @@ const SolarisRenderer = {
             ctx.restore();
         });
 
-        // 3. Disegna la linea del Substilo (dove appoggia fisicamente lo gnomone)
+        // 3. Disegna lo Gnomone Ribaltato (Dima di costruzione sul piano del muro)
         const sdRad = SolarisMath.degToRad(gparams.substyleAngle);
-        ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 5]);
+        const aRad = SolarisMath.degToRad(gparams.styleAngle);
+        
+        // Punti chiave in pixel
+        const footX = ox + (gparams.substyleLength * mmToPx) * Math.sin(sdRad);
+        const footY = oy + (gparams.substyleLength * mmToPx) * Math.cos(sdRad);
+        const foldedNodusX = footX + (gparams.orthoLength * mmToPx) * Math.cos(sdRad);
+        const foldedNodusY = footY - (gparams.orthoLength * mmToPx) * Math.sin(sdRad);
+
+        // Riempimento del triangolo dello gnomone
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.06)';
         ctx.beginPath();
         ctx.moveTo(ox, oy);
-        ctx.lineTo(ox + R_ref * Math.sin(sdRad), oy + R_ref * Math.cos(sdRad));
+        ctx.lineTo(footX, footY);
+        ctx.lineTo(foldedNodusX, foldedNodusY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Contorno dello gnomone tratteggiato
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(footX, footY);
+        ctx.lineTo(foldedNodusX, foldedNodusY);
+        ctx.closePath();
         ctx.stroke();
         ctx.setLineDash([]); // reset
 
-        // Etichetta substilo
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.4)';
+        // Etichette dei lati dello gnomone ribaltato
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.85)';
+        ctx.font = 'italic 10px "Space Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // 1. Label Substilo (Base)
+        const midBaseX = (ox + footX) / 2;
+        const midBaseY = (oy + footY) / 2;
+        // Spostamento a sinistra della linea del substilo
+        const shiftBaseX = -12 * Math.cos(sdRad);
+        const shiftBaseY = 12 * Math.sin(sdRad);
+        ctx.save();
+        ctx.translate(midBaseX + shiftBaseX, midBaseY + shiftBaseY);
+        // Ruota parallelo al substilo
+        let rotBase = sdRad;
+        if (rotBase > Math.PI/2) rotBase -= Math.PI;
+        if (rotBase < -Math.PI/2) rotBase += Math.PI;
+        ctx.rotate(rotBase);
+        ctx.fillText(lang === "it" ? `Substilo: ${gparams.substyleLength.toFixed(1)} mm` : `Substyle: ${gparams.substyleLength.toFixed(1)} mm`, 0, 0);
+        ctx.restore();
+
+        // 2. Label Ortostilo (Altezza)
+        const midOrthoX = (footX + foldedNodusX) / 2;
+        const midOrthoY = (footY + foldedNodusY) / 2;
+        // Spostamento sotto/esterno
+        const shiftOrthoX = 12 * Math.sin(sdRad);
+        const shiftOrthoY = 12 * Math.cos(sdRad);
+        ctx.save();
+        ctx.translate(midOrthoX + shiftOrthoX, midOrthoY + shiftOrthoY);
+        // Ruota parallelo all'ortostilo
+        let rotOrtho = sdRad - Math.PI/2;
+        if (rotOrtho > Math.PI/2) rotOrtho -= Math.PI;
+        if (rotOrtho < -Math.PI/2) rotOrtho += Math.PI;
+        ctx.rotate(rotOrtho);
+        ctx.fillText(lang === "it" ? `Ortostilo (h): ${gparams.orthoLength.toFixed(1)} mm` : `Orthostyle (h): ${gparams.orthoLength.toFixed(1)} mm`, 0, 0);
+        ctx.restore();
+
+        // 3. Label Stilo Polare (Ipotenusa)
+        const midHypX = (ox + foldedNodusX) / 2;
+        const midHypY = (oy + foldedNodusY) / 2;
+        // Spostamento a destra/esterno dell'ipotenusa
+        const hypAngle = sdRad + aRad;
+        const shiftHypX = 12 * Math.cos(hypAngle);
+        const shiftHypY = -12 * Math.sin(hypAngle);
+        ctx.save();
+        ctx.translate(midHypX + shiftHypX, midHypY + shiftHypY);
+        // Ruota parallelo all'ipotenusa
+        let rotHyp = hypAngle;
+        if (rotHyp > Math.PI/2) rotHyp -= Math.PI;
+        if (rotHyp < -Math.PI/2) rotHyp += Math.PI;
+        ctx.rotate(rotHyp);
+        ctx.fillStyle = 'var(--accent-gold)';
+        ctx.font = 'bold italic 10px "Space Grotesk", sans-serif';
+        ctx.fillText(lang === "it" ? `Stilo Polare: ${gparams.polarLength.toFixed(1)} mm` : `Polar Style: ${gparams.polarLength.toFixed(1)} mm`, 0, 0);
+        ctx.restore();
+
+        // Indicazione dell'angolo dello stilo
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.7)';
         ctx.font = '9px "Space Grotesk", sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(lang === "it" ? "Substilo (Substyle)" : "Substyle", ox + 10, oy + 25);
+        ctx.fillText(`a = ${gparams.styleAngle.toFixed(1)}°`, ox + 15 * Math.sin(sdRad + aRad/2), oy + 15 * Math.cos(sdRad + aRad/2) + 5);
+
+        // 4. Disegna l'Apex (Punto di fissaggio dello gnomone a muro)
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = 'var(--accent-gold)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(ox, oy, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = 'var(--accent-gold)';
+        ctx.beginPath();
+        ctx.arc(ox, oy, 2.5, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = 'var(--accent-gold)';
+        ctx.font = 'bold 10px "Space Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(lang === "it" ? "FISSAGGIO STILO (APEX)" : "STYLE ATTACHMENT (APEX)", ox, oy - 15);
 
         // 4. Disegna le curve di declinazione (Solstizi ed Equinozi)
         // Disegniamo 3 curve calcolando l'ombra del nodulo per ogni ora utile della giornata
@@ -179,10 +313,6 @@ const SolarisRenderer = {
             { decVal: -23.44, color: '#3b82f6', label: lang === "it" ? "Solstizio d'Inverno" : "Winter Solstice" } // Inverno
         ];
 
-        // Definiamo un fattore di scala per i millimetri reali a pixel sul canvas
-        // gparams.polarLength (es. 200mm) viene mappato a circa 0.35 * R_ref pixel
-        const mmToPx = (0.45 * R_ref) / gparams.polarLength;
-
         declinationValues.forEach(dVal => {
             ctx.strokeStyle = dVal.color;
             ctx.lineWidth = 1.5;
@@ -190,6 +320,7 @@ const SolarisRenderer = {
 
             ctx.beginPath();
             let firstPoint = true;
+            const validPoints = [];
 
             // Disegniamo la curva calcolando la posizione dell'ombra ogni 15 minuti (3.75 gradi)
             for (let hDeg = -120; hDeg <= 120; hDeg += 2.5) {
@@ -203,7 +334,8 @@ const SolarisRenderer = {
 
                     // Limita il disegno entro un'area sensata per evitare linee infinite all'alba/tramonto
                     const dist = Math.sqrt((sx-ox)*(sx-ox) + (sy-oy)*(sy-oy));
-                    if (dist < R_ref * 1.5) {
+                    if (dist < R_ref * 1.3) {
+                        validPoints.push({ x: sx, y: sy });
                         if (firstPoint) {
                             ctx.moveTo(sx, sy);
                             firstPoint = false;
@@ -215,6 +347,52 @@ const SolarisRenderer = {
             }
             ctx.stroke();
             ctx.globalAlpha = 1.0;
+
+            // Disegna i simboli zodiacali agli estremi della curva per un aspetto classico premium
+            if (validPoints.length >= 2) {
+                const startPt = validPoints[0];
+                const endPt = validPoints[validPoints.length - 1];
+
+                ctx.fillStyle = dVal.color;
+                ctx.font = '13px "Space Grotesk", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                let startSymbol = "";
+                let endSymbol = "";
+                if (dVal.decVal === 23.44) {
+                    startSymbol = "♋";
+                    endSymbol = "♋";
+                } else if (dVal.decVal === 0) {
+                    startSymbol = "♈";
+                    endSymbol = "♎";
+                } else if (dVal.decVal === -23.44) {
+                    startSymbol = "♑";
+                    endSymbol = "♑";
+                }
+
+                if (startSymbol) {
+                    const dxStart = startPt.x - ox;
+                    const dyStart = startPt.y - oy;
+                    const lenStart = Math.sqrt(dxStart*dxStart + dyStart*dyStart);
+                    if (lenStart > 0.001) {
+                        const sxText = startPt.x + (dxStart / lenStart) * 12;
+                        const syText = startPt.y + (dyStart / lenStart) * 12;
+                        ctx.fillText(startSymbol, sxText, syText);
+                    }
+                }
+
+                if (endSymbol) {
+                    const dxEnd = endPt.x - ox;
+                    const dyEnd = endPt.y - oy;
+                    const lenEnd = Math.sqrt(dxEnd*dxEnd + dyEnd*dyEnd);
+                    if (lenEnd > 0.001) {
+                        const exText = endPt.x + (dxEnd / lenEnd) * 12;
+                        const eyText = endPt.y + (dyEnd / lenEnd) * 12;
+                        ctx.fillText(endSymbol, exText, eyText);
+                    }
+                }
+            }
         });
 
         // 5. Disegna la proiezione dell'ombra dello stilo in TEMPO REALE
@@ -598,33 +776,130 @@ const SolarisRenderer = {
     <line x1="400" y1="350" x2="400" y2="600" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" />
     
     <!-- Linee orarie -->
-    ${wallHourLines.map((line, idx) => {
-        const dummySun = SolarisMath.getSunPosition(lat, solarDec, line.hourAngle);
-        const dummyProj = SolarisMath.projectNodusShadowOnWall(dummySun.altitude, dummySun.azimuth, lat, dec, gparams, params.inclination);
-        const opacity = dummyProj ? "1.0" : "0.15";
-        const strokeColor = dummyProj ? "#ffffff" : "#4b5563";
-        const hVal = hoursList[idx];
+    ${(() => {
+        const mmToPx = (0.45 * 230) / gparams.polarLength;
+        const R_ref = 230;
+        const ox = 400;
+        const oy = 350;
 
-        const thetaRad = SolarisMath.degToRad(line.angleFromVertical);
-        const lx = 400 + 230 * Math.sin(thetaRad);
-        const ly = 350 + 230 * Math.cos(thetaRad);
-        
-        const tx = 400 + 255 * Math.sin(thetaRad);
-        const ty = 350 + 255 * Math.cos(thetaRad);
+        return wallHourLines.map((line, idx) => {
+            const hVal = hoursList[idx];
+            const thetaRad = SolarisMath.degToRad(line.angleFromVertical);
 
-        return `
+            const dummySun = SolarisMath.getSunPosition(lat, solarDec, line.hourAngle);
+            const dummyProj = SolarisMath.projectNodusShadowOnWall(dummySun.altitude, dummySun.azimuth, lat, dec, gparams, params.inclination);
+            const opacity = dummyProj ? "1.0" : "0.15";
+            const strokeColor = dummyProj ? "#ffffff" : "#4b5563";
+
+            // Calcola i punti d'ombra al solstizio d'inverno (-23.44) e d'estate (23.44) per il clipping delle linee
+            const sPosWin = SolarisMath.getSunPosition(lat, -23.44, line.hourAngle);
+            const shWin = SolarisMath.projectNodusShadowOnWall(sPosWin.altitude, sPosWin.azimuth, lat, dec, gparams, params.inclination);
+
+            const sPosSum = SolarisMath.getSunPosition(lat, 23.44, line.hourAngle);
+            const shSum = SolarisMath.projectNodusShadowOnWall(sPosSum.altitude, sPosSum.azimuth, lat, dec, gparams, params.inclination);
+
+            if (!shWin && !shSum) return '';
+
+            const dWin = shWin ? Math.sqrt(shWin.x * shWin.x + shWin.y * shWin.y) * mmToPx : null;
+            const dSum = shSum ? Math.sqrt(shSum.x * shSum.x + shSum.y * shSum.y) * mmToPx : null;
+
+            let dStart = R_ref * 0.15;
+            let dEnd = R_ref * 1.25;
+
+            if (dWin !== null && dSum !== null) {
+                dStart = Math.min(dWin, dSum);
+                dEnd = Math.max(dWin, dSum);
+            } else if (dSum !== null) {
+                dStart = R_ref * 0.15;
+                dEnd = dSum;
+            } else if (dWin !== null) {
+                dStart = R_ref * 0.15;
+                dEnd = dWin;
+            }
+
+            const dEndClipped = Math.min(dEnd, R_ref * 1.25);
+            const dStartClipped = Math.min(dStart, R_ref * 1.2);
+
+            if (dStartClipped >= dEndClipped) return '';
+
+            const lx1 = ox + dStartClipped * Math.sin(thetaRad);
+            const ly1 = oy + dStartClipped * Math.cos(thetaRad);
+            const lx2 = ox + dEndClipped * Math.sin(thetaRad);
+            const ly2 = oy + dEndClipped * Math.cos(thetaRad);
+
+            const labelDist = dEndClipped + 18;
+            const tx = ox + labelDist * Math.sin(thetaRad);
+            const ty = oy + labelDist * Math.cos(thetaRad);
+
+            let rotDeg = line.angleFromVertical;
+            if (rotDeg > 90) rotDeg -= 180;
+            if (rotDeg < -90) rotDeg += 180;
+
+            return `
     <!-- Ora ${hVal} -->
-    <line x1="400" y1="350" x2="${lx.toFixed(1)}" y2="${ly.toFixed(1)}" stroke="${strokeColor}" stroke-width="${hVal === 12 ? '2' : '1'}" opacity="${opacity}" />
-    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="12" font-weight="${hVal === 12 ? 'bold' : 'normal'}" fill="${hVal === 12 ? '#f59e0b' : '#ffffff'}" text-anchor="middle" dominant-baseline="middle" opacity="${opacity}">${romanNumerals[hVal]}</text>`;
-    }).join('')}
+    <line x1="${lx1.toFixed(1)}" y1="${ly1.toFixed(1)}" x2="${lx2.toFixed(1)}" y2="${ly2.toFixed(1)}" stroke="${strokeColor}" stroke-width="${hVal === 12 ? '2' : '1'}" opacity="${opacity}" />
+    <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="12" font-weight="${hVal === 12 ? 'bold' : 'normal'}" fill="${hVal === 12 ? '#f59e0b' : '#ffffff'}" text-anchor="middle" dominant-baseline="middle" opacity="${opacity}" transform="rotate(${rotDeg.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)})">${romanNumerals[hVal]}</text>`;
+        }).join('');
+    })()}
 
-    <!-- Linea del substilo -->
+    <!-- Gnomone Ribaltato (Dima di costruzione sul piano del muro) -->
     ${(() => {
         const sdRad = SolarisMath.degToRad(gparams.substyleAngle);
-        const sx = 400 + 230 * Math.sin(sdRad);
-        const sy = 350 + 230 * Math.cos(sdRad);
-        return `<line x1="400" y1="350" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.7" />
-    <text x="${(400 + 100 * Math.sin(sdRad) + 10).toFixed(1)}" y="${(350 + 100 * Math.cos(sdRad)).toFixed(1)}" font-family="'Outfit', sans-serif" font-size="8" fill="#f59e0b" opacity="0.6">${lang === 'it' ? 'SUBSTILO' : 'SUBSTYLE'}</text>`;
+        const aRad = SolarisMath.degToRad(gparams.styleAngle);
+        const mmToPx = (0.45 * 230) / gparams.polarLength;
+
+        const footX = 400 + (gparams.substyleLength * mmToPx) * Math.sin(sdRad);
+        const footY = 350 + (gparams.substyleLength * mmToPx) * Math.cos(sdRad);
+        const foldedNodusX = footX + (gparams.orthoLength * mmToPx) * Math.cos(sdRad);
+        const foldedNodusY = footY - (gparams.orthoLength * mmToPx) * Math.sin(sdRad);
+
+        const midBaseX = (400 + footX) / 2;
+        const midBaseY = (350 + footY) / 2;
+        const shiftBaseX = -12 * Math.cos(sdRad);
+        const shiftBaseY = 12 * Math.sin(sdRad);
+        let rotBase = gparams.substyleAngle;
+        if (rotBase > 90) rotBase -= 180;
+        if (rotBase < -90) rotBase += 180;
+
+        const midOrthoX = (footX + foldedNodusX) / 2;
+        const midOrthoY = (footY + foldedNodusY) / 2;
+        const shiftOrthoX = 12 * Math.sin(sdRad);
+        const shiftOrthoY = 12 * Math.cos(sdRad);
+        let rotOrtho = gparams.substyleAngle - 90;
+        if (rotOrtho > 90) rotOrtho -= 180;
+        if (rotOrtho < -90) rotOrtho += 180;
+
+        const midHypX = (400 + foldedNodusX) / 2;
+        const midHypY = (350 + foldedNodusY) / 2;
+        const hypAngle = sdRad + aRad;
+        const shiftHypX = 12 * Math.cos(hypAngle);
+        const shiftHypY = -12 * Math.sin(hypAngle);
+        let rotHyp = gparams.substyleAngle + gparams.styleAngle;
+        if (rotHyp > 90) rotHyp -= 180;
+        if (rotHyp < -90) rotHyp += 180;
+
+        const angleTextX = 400 + 18 * Math.sin(sdRad + aRad/2);
+        const angleTextY = 350 + 18 * Math.cos(sdRad + aRad/2);
+
+        return `
+    <!-- Triangolo dello gnomone ribaltato -->
+    <polygon points="400,350 ${footX.toFixed(1)},${footY.toFixed(1)} ${foldedNodusX.toFixed(1)},${foldedNodusY.toFixed(1)}" fill="#f59e0b" fill-opacity="0.06" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,4" />
+    
+    <!-- Testi e misure dei lati -->
+    <text x="${(midBaseX + shiftBaseX).toFixed(1)}" y="${(midBaseY + shiftBaseY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-style="italic" fill="#f59e0b" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotBase.toFixed(1)} ${(midBaseX + shiftBaseX).toFixed(1)} ${(midBaseY + shiftBaseY).toFixed(1)})">${lang === 'it' ? `Substilo: ${gparams.substyleLength.toFixed(1)} mm` : `Substyle: ${gparams.substyleLength.toFixed(1)} mm`}</text>
+    
+    <text x="${(midOrthoX + shiftOrthoX).toFixed(1)}" y="${(midOrthoY + shiftOrthoY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-style="italic" fill="#f59e0b" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotOrtho.toFixed(1)} ${(midOrthoX + shiftOrthoX).toFixed(1)} ${(midOrthoY + shiftOrthoY).toFixed(1)})">${lang === 'it' ? `Ortostilo (h): ${gparams.orthoLength.toFixed(1)} mm` : `Orthostyle (h): ${gparams.orthoLength.toFixed(1)} mm`}</text>
+    
+    <text x="${(midHypX + shiftHypX).toFixed(1)}" y="${(midHypY + shiftHypY).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" font-style="italic" fill="#f59e0b" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotHyp.toFixed(1)} ${(midHypX + shiftHypX).toFixed(1)} ${(midHypY + shiftHypY).toFixed(1)})">${lang === 'it' ? `Stilo Polare: ${gparams.polarLength.toFixed(1)} mm` : `Polar Style: ${gparams.polarLength.toFixed(1)} mm`}</text>
+    
+    <!-- Indicazione angolo stilo -->
+    <text x="${angleTextX.toFixed(1)}" y="${(angleTextY + 3).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="8" fill="#f59e0b" fill-opacity="0.7" text-anchor="start">a = ${gparams.styleAngle.toFixed(1)}°</text>
+    
+    <!-- Apex marker di fissaggio -->
+    <circle cx="400" cy="350" r="6" fill="#ffffff" stroke="#f59e0b" stroke-width="2.5" />
+    <circle cx="400" cy="350" r="2.5" fill="#f59e0b" />
+    <text x="400" y="335" font-family="'Space Grotesk', sans-serif" font-size="10" font-weight="bold" fill="#f59e0b" text-anchor="middle">${lang === 'it' ? 'FISSAGGIO STILO (APEX)' : 'STYLE ATTACHMENT (APEX)'}</text>
+        `;
     })()}
 
     <!-- Curve di declinazione (Solstizi ed Equinozi) -->
@@ -635,6 +910,9 @@ const SolarisRenderer = {
             { v: -23.44, col: "#3b82f6", name: "SOLSTIZIO INVERNO / WINTER SOLSTICE" }
         ];
         const mmToPx = (0.45 * 230) / gparams.polarLength;
+        const ox = 400;
+        const oy = 350;
+        const R_ref = 230;
 
         return dVals.map(dVal => {
             let pathPoints = [];
@@ -642,24 +920,62 @@ const SolarisRenderer = {
                 const sPos = SolarisMath.getSunPosition(lat, dVal.v, hDeg);
                 const shadow = SolarisMath.projectNodusShadowOnWall(sPos.altitude, sPos.azimuth, lat, dec, gparams, params.inclination);
                 if (shadow) {
-                    const sx = 400 + shadow.x * mmToPx;
-                    const sy = 350 + shadow.y * mmToPx;
-                    const d = Math.sqrt((sx-400)*(sx-400) + (sy-350)*(sy-350));
-                    if (d < 350) {
-                        pathPoints.push(`${sx.toFixed(1)},${sy.toFixed(1)}`);
+                    const sx = ox + shadow.x * mmToPx;
+                    const sy = oy + shadow.y * mmToPx;
+                    const d = Math.sqrt((sx-ox)*(sx-ox) + (sy-oy)*(sy-oy));
+                    if (d < R_ref * 1.3) {
+                        pathPoints.push({ x: sx, y: sy });
                     }
                 }
             }
             if (pathPoints.length === 0) return '';
+            
+            const startPt = pathPoints[0];
+            const endPt = pathPoints[pathPoints.length - 1];
+            
+            let startSymbol = "";
+            let endSymbol = "";
+            if (dVal.v === 23.44) {
+                startSymbol = "♋";
+                endSymbol = "♋";
+            } else if (dVal.v === 0) {
+                startSymbol = "♈";
+                endSymbol = "♎";
+            } else if (dVal.v === -23.44) {
+                startSymbol = "♑";
+                endSymbol = "♑";
+            }
+
+            let textTags = "";
+            if (pathPoints.length >= 2) {
+                const dxStart = startPt.x - ox;
+                const dyStart = startPt.y - oy;
+                const lenStart = Math.sqrt(dxStart*dxStart + dyStart*dyStart);
+                if (lenStart > 0.001) {
+                    const sxText = startPt.x + (dxStart / lenStart) * 12;
+                    const syText = startPt.y + (dyStart / lenStart) * 12;
+                    textTags += `<text x="${sxText.toFixed(1)}" y="${syText.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="12" fill="${dVal.col}" text-anchor="middle" dominant-baseline="middle">${startSymbol}</text>\n`;
+                }
+
+                const dxEnd = endPt.x - ox;
+                const dyEnd = endPt.y - oy;
+                const lenEnd = Math.sqrt(dxEnd*dxEnd + dyEnd*dyEnd);
+                if (lenEnd > 0.001) {
+                    const exText = endPt.x + (dxEnd / lenEnd) * 12;
+                    const eyText = endPt.y + (dyEnd / lenEnd) * 12;
+                    textTags += `<text x="${exText.toFixed(1)}" y="${eyText.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="12" fill="${dVal.col}" text-anchor="middle" dominant-baseline="middle">${endSymbol}</text>\n`;
+                }
+            }
+
+            const pathString = pathPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
+
             return `
     <!-- Curva Declinazione ${dVal.v} -->
-    <path d="M ${pathPoints.join(' L ')}" fill="none" stroke="${dVal.col}" stroke-width="1.5" opacity="0.6" />`;
+    <path d="M ${pathString}" fill="none" stroke="${dVal.col}" stroke-width="1.5" opacity="0.6" />
+    ${textTags}`;
         }).join('');
     })()}
-    
-    <!-- Centro Orologio -->
-    <circle cx="400" cy="350" r="5" fill="#f59e0b" />
-    <circle cx="400" cy="350" r="10" stroke="#f59e0b" stroke-width="1" fill="none" opacity="0.5" />
+
   </g>
 </svg>`;
         } else {

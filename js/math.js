@@ -134,8 +134,11 @@ const SolarisMath = {
         const styleAngleDeg = SolarisMath.radToDeg(a_rad);
 
         // 3. Angolo del substilo SD (substyleAngle) rispetto alla verticale v_wall
-        const u_proj = g_polar[0]*u_wall[0] + g_polar[1]*u_wall[1] + g_polar[2]*u_wall[2];
-        const v_proj = g_polar[0]*v_wall[0] + g_polar[1]*v_wall[1] + g_polar[2]*v_wall[2];
+        // Definiamo il vettore dello stilo fisico g_style in modo che sporga sempre dalla parete (prodotto scalare positivo o nullo)
+        const g_style = dot_g_n >= 0 ? g_polar : [-g_polar[0], -g_polar[1], -g_polar[2]];
+        
+        const u_proj = g_style[0]*u_wall[0] + g_style[1]*u_wall[1] + g_style[2]*u_wall[2];
+        const v_proj = g_style[0]*v_wall[0] + g_style[1]*v_wall[1] + g_style[2]*v_wall[2];
         
         let substyleAngleDeg = 0;
         if (Math.abs(u_proj) > 0.0001 || Math.abs(v_proj) > 0.0001) {
