@@ -80,9 +80,12 @@ const SolarisRenderer = {
         const ox = cx;
         const oy = cy - 30;
 
+        const wallZoom = params.wallZoom !== undefined ? params.wallZoom / 100 : 1.0;
+
         // Scala di disegno: vogliamo far entrare una meridiana di raggio ~180px nel viewport
-        // Usiamo un raggio di riferimento per disegnare le linee orarie
-        const R_ref = Math.min(width, height) * 0.38;
+        // Usiamo un raggio di riferimento per disegnare le linee orarie.
+        // Aumentiamo la base da 0.38 a 0.40 e applichiamo lo zoom.
+        const R_ref = Math.min(width, height) * 0.40 * wallZoom;
 
         // Definiamo un fattore di scala per i millimetri reali a pixel sul canvas
         // gparams.polarLength (es. 200mm) viene mappato a circa 0.45 * R_ref pixel
@@ -513,8 +516,9 @@ const SolarisRenderer = {
             ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
         }
 
-        // Scala di disegno: semiasse maggiore 'a' deve occupare circa il 38% del semiasse del canvas
-        const scalePxPerM = (width * 0.38) / a;
+        const floorZoom = params.floorZoom !== undefined ? params.floorZoom / 100 : 0.8;
+        // Scala di disegno: semiasse maggiore 'a' basato sul lato minore del canvas per evitare traboccamenti
+        const scalePxPerM = (Math.min(width, height) * 0.40 * floorZoom) / a;
 
         // Disegna assi cartesiani principali (N-S ed E-W) della piazza
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -731,6 +735,10 @@ const SolarisRenderer = {
             const gLen = params.gnomonLength;
             const gparams = SolarisMath.calcWallGnomonParameters(lat, dec, gLen, params.inclination);
 
+            const wallZoom = params.wallZoom !== undefined ? params.wallZoom / 100 : 1.0;
+            const R_ref = 230 * wallZoom;
+            const mmToPx = (0.45 * R_ref) / gparams.polarLength;
+
             const hoursList = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
             const hourAngles = hoursList.map(h => (h - 12) * 15);
             const wallHourLines = SolarisMath.calcWallHourLines(gparams.styleAngle, gparams.h0, gparams.substyleAngle, hourAngles);
@@ -777,8 +785,6 @@ const SolarisRenderer = {
     
     <!-- Linee orarie -->
     ${(() => {
-        const mmToPx = (0.45 * 230) / gparams.polarLength;
-        const R_ref = 230;
         const ox = 400;
         const oy = 350;
 
@@ -846,7 +852,6 @@ const SolarisRenderer = {
     ${(() => {
         const sdRad = SolarisMath.degToRad(gparams.substyleAngle);
         const aRad = SolarisMath.degToRad(gparams.styleAngle);
-        const mmToPx = (0.45 * 230) / gparams.polarLength;
 
         const footX = 400 + (gparams.substyleLength * mmToPx) * Math.sin(sdRad);
         const footY = 350 + (gparams.substyleLength * mmToPx) * Math.cos(sdRad);
@@ -909,10 +914,8 @@ const SolarisRenderer = {
             { v: 0, col: "#10b981", name: "EQUINOZI / EQUINOXES" },
             { v: -23.44, col: "#3b82f6", name: "SOLSTIZIO INVERNO / WINTER SOLSTICE" }
         ];
-        const mmToPx = (0.45 * 230) / gparams.polarLength;
         const ox = 400;
         const oy = 350;
-        const R_ref = 230;
 
         return dVals.map(dVal => {
             let pathPoints = [];
@@ -991,7 +994,8 @@ const SolarisRenderer = {
             
             const calPoints = SolarisMath.getCalendarScalePoints(aVal, lat, slope, slopeDir);
 
-            const scalePxPerM = 300 / aVal; // Semiasse maggiore mappato a 300px
+            const floorZoom = params.floorZoom !== undefined ? params.floorZoom / 100 : 0.8;
+            const scalePxPerM = (300 * floorZoom) / aVal; // Semiasse maggiore mappato a 300px con zoom
 
             svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">

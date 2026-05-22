@@ -25,6 +25,8 @@ const SolarisTranslations = {
         "gnomon-length": "Lunghezza Stilo Fisico",
         "ellipse-width": "Semiasse Maggiore (a)",
         "ellipse-help": "Larghezza totale ellisse = 2 × a",
+        "wall-zoom": "Zoom Meridiana",
+        "floor-zoom": "Zoom Meridiana",
         "floor-slope": "Pendenza Piazza",
         "slope-direction": "Direzione Pendenza",
         "floor-flat": "Pavimento Orizzontale (Piatto)",
@@ -97,6 +99,8 @@ const SolarisTranslations = {
         "gnomon-length": "Physical Style Length",
         "ellipse-width": "Semi-Major Axis (a)",
         "ellipse-help": "Total ellipse width = 2 × a",
+        "wall-zoom": "Sundial Zoom",
+        "floor-zoom": "Sundial Zoom",
         "floor-slope": "Plaza Slope",
         "slope-direction": "Slope Direction",
         "floor-flat": "Horizontal Floor (Flat)",
@@ -167,7 +171,9 @@ const SolarisApp = {
         floorSlopeDir: 180.0,
         date: "2026-06-21",
         timeMinutes: 720, // 12:00 in minuti
-        isLive: false
+        isLive: false,
+        wallZoom: 100,
+        floorZoom: 80
     },
 
     liveInterval: null,
@@ -261,6 +267,18 @@ const SolarisApp = {
         document.getElementById('input-ellipse-width').addEventListener('input', (e) => {
             SolarisApp.state.ellipseWidth = parseFloat(e.target.value);
             document.getElementById('ellipse-w-val').innerText = `${parseFloat(e.target.value).toFixed(1)} m`;
+            SolarisApp.calculateAndRedraw();
+        });
+
+        document.getElementById('input-wall-zoom').addEventListener('input', (e) => {
+            SolarisApp.state.wallZoom = parseFloat(e.target.value);
+            document.getElementById('wall-zoom-val').innerText = `${e.target.value}%`;
+            SolarisApp.calculateAndRedraw();
+        });
+
+        document.getElementById('input-floor-zoom').addEventListener('input', (e) => {
+            SolarisApp.state.floorZoom = parseFloat(e.target.value);
+            document.getElementById('floor-zoom-val').innerText = `${e.target.value}%`;
             SolarisApp.calculateAndRedraw();
         });
 
@@ -478,6 +496,8 @@ const SolarisApp = {
 
         document.getElementById('input-gnomon-len').value = SolarisApp.state.gnomonLength;
         document.getElementById('input-ellipse-width').value = SolarisApp.state.ellipseWidth;
+        document.getElementById('input-wall-zoom').value = SolarisApp.state.wallZoom;
+        document.getElementById('input-floor-zoom').value = SolarisApp.state.floorZoom;
         document.getElementById('select-timezone').value = SolarisApp.state.timezone;
         document.getElementById('check-dst').checked = SolarisApp.state.isDst;
         document.getElementById('input-date').value = SolarisApp.state.date;
@@ -500,6 +520,8 @@ const SolarisApp = {
         
         document.getElementById('gnomon-len-val').innerText = `${SolarisApp.state.gnomonLength} mm`;
         document.getElementById('ellipse-w-val').innerText = `${SolarisApp.state.ellipseWidth.toFixed(1)} m`;
+        document.getElementById('wall-zoom-val').innerText = `${SolarisApp.state.wallZoom}%`;
+        document.getElementById('floor-zoom-val').innerText = `${SolarisApp.state.floorZoom}%`;
 
         const lang = SolarisApp.state.lang;
 
