@@ -30,6 +30,37 @@ const SolarisRenderer = {
     },
 
     /**
+     * Calcola la direzione della pendenza espressa in notazione quadrante (es. N 45° E)
+     */
+    getSlopeQuadrantBearing: (slopeDir, lang = "it") => {
+        let angleDeg = slopeDir;
+        angleDeg = ((angleDeg % 360) + 360) % 360;
+        
+        let northSouth = "N";
+        let eastWest = "E";
+        let val = 0;
+
+        if (angleDeg <= 90) {
+            northSouth = "N";
+            eastWest = "E";
+            val = angleDeg;
+        } else if (angleDeg <= 180) {
+            northSouth = "S";
+            eastWest = "E";
+            val = 180 - angleDeg;
+        } else if (angleDeg <= 270) {
+            northSouth = "S";
+            eastWest = lang === 'it' ? "O" : "W";
+            val = angleDeg - 180;
+        } else {
+            northSouth = "N";
+            eastWest = lang === 'it' ? "O" : "W";
+            val = 360 - angleDeg;
+        }
+        return `${northSouth} ${val.toFixed(0)}° ${eastWest}`;
+    },
+
+    /**
      * DISEGNA LA MERIDIANA A PARETE (VERTICALE DECLINANTE)
      */
     drawWallSundial: (canvasId, params, date, timeStr, lang = "it") => {
@@ -537,6 +568,54 @@ const SolarisRenderer = {
         ctx.fillText("S (Sud)", cx, height - 15);
         ctx.fillText("W (Ovest)", 35, cy);
         ctx.fillText("E (Est)", width - 35, cy);
+
+        // 1.5. Disegna la direzione della pendenza (se slope > 0)
+        if (slope > 0) {
+            const slopeDirRad = slopeDir * Math.PI / 180;
+            const L = a * scalePxPerM * 0.75;
+            const endX = cx + L * Math.sin(slopeDirRad);
+            const endY = cy - L * Math.cos(slopeDirRad);
+
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            ctx.setLineDash([]); // reset
+
+            // Freccia direzionale
+            const arrowSize = 8;
+            const angle = Math.atan2(endY - cy, endX - cx);
+            ctx.fillStyle = '#06b6d4';
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - arrowSize * Math.cos(angle - Math.PI / 6), endY - arrowSize * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(endX - arrowSize * Math.cos(angle + Math.PI / 6), endY - arrowSize * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+
+            // Etichetta testo
+            ctx.font = 'bold 9px "Space Grotesk", sans-serif';
+            ctx.fillStyle = '#06b6d4';
+            
+            const bearing = SolarisRenderer.getSlopeQuadrantBearing(slopeDir, lang);
+            const labelText = lang === 'it' ? `Direzione Pendenza: ${slope.toFixed(1)}° (${bearing})` : `Slope Direction: ${slope.toFixed(1)}° (${bearing})`;
+            
+            const tx = endX + 10 * Math.cos(angle);
+            const ty = endY + 10 * Math.sin(angle);
+
+            if (Math.cos(angle) < -0.1) {
+                ctx.textAlign = 'right';
+            } else if (Math.cos(angle) > 0.1) {
+                ctx.textAlign = 'left';
+            } else {
+                ctx.textAlign = 'center';
+            }
+            ctx.textBaseline = 'middle';
+            ctx.fillText(labelText, tx, ty);
+        }
 
         // 2. Disegna l'ellisse teorica delle ore (ruotata per pendenza piazza)
         ctx.strokeStyle = 'rgba(245, 158, 11, 0.15)';
@@ -1078,6 +1157,47 @@ const SolarisRenderer = {
     <text x="400" y="670" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#000000" text-anchor="middle">S (Sud / South)</text>
     <text x="25" y="354" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#000000">W (Ovest / West)</text>
     <text x="755" y="354" font-family="'Space Grotesk', sans-serif" font-size="10" fill="#000000">E (Est / East)</text>
+
+    <!-- Direzione della Pendenza -->
+    ${(() => {
+        if (slope > 0) {
+            const slopeDirRad = slopeDir * Math.PI / 180;
+            const L = aVal * scalePxPerM * 0.75;
+            const endX = 400 + L * Math.sin(slopeDirRad);
+            const endY = 350 - L * Math.cos(slopeDirRad);
+            const angle = Math.atan2(endY - 350, endX - 400);
+            const arrowSize = 8;
+            
+            const bearing = SolarisRenderer.getSlopeQuadrantBearing(slopeDir, lang);
+            const labelText = lang === 'it' ? `Direzione Pendenza: ${slope.toFixed(1)}° (${bearing})` : `Slope Direction: ${slope.toFixed(1)}° (${bearing})`;
+            
+            const tx = endX + 10 * Math.cos(angle);
+            const ty = endY + 10 * Math.sin(angle);
+            
+            let textAnchor = "middle";
+            if (Math.cos(angle) < -0.1) {
+                textAnchor = "end";
+            } else if (Math.cos(angle) > 0.1) {
+                textAnchor = "start";
+            }
+
+            const ax1 = endX - arrowSize * Math.cos(angle - Math.PI / 6);
+            const ay1 = endY - arrowSize * Math.sin(angle - Math.PI / 6);
+            const ax2 = endX - arrowSize * Math.cos(angle + Math.PI / 6);
+            const ay2 = endY - arrowSize * Math.sin(angle + Math.PI / 6);
+
+            return `
+    <g id="slope-direction-line">
+      <!-- Linea pendenza tratteggiata -->
+      <line x1="400" y1="350" x2="${endX.toFixed(1)}" y2="${endY.toFixed(1)}" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="4,3" />
+      <!-- Punta freccia -->
+      <polygon points="${endX.toFixed(1)},${endY.toFixed(1)} ${ax1.toFixed(1)},${ay1.toFixed(1)} ${ax2.toFixed(1)},${ay2.toFixed(1)}" fill="#0891b2" />
+      <!-- Testo etichetta -->
+      <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#0891b2" text-anchor="${textAnchor}" dominant-baseline="middle">${labelText}</text>
+    </g>`;
+        }
+        return '';
+    })()}
 
     <!-- Ellisse Oraria Ruotata -->
     <ellipse cx="400" cy="350" rx="${aVal * scalePxPerM}" ry="${geom.b * scalePxPerM}" transform="rotate(${(-geom.rotationAngle * 180 / Math.PI).toFixed(2)} 400 350)" stroke="#b45309" stroke-width="1.5" fill="none" opacity="0.5" />
