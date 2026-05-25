@@ -566,7 +566,7 @@ const SolarisRenderer = {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = '11px "Space Grotesk", sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(`☀️ ${lang === "it" ? "Ombra reale" : "Real Shadow"}`, shx + 10, shy - 5);
+            ctx.fillText(lang === "it" ? "Ombra reale" : "Real Shadow", shx + 10, shy - 5);
         } else {
             // Muro in ombra o sole tramontato
             ctx.fillStyle = 'rgba(239, 68, 68, 0.7)';
@@ -1257,7 +1257,7 @@ const SolarisRenderer = {
       <line x1="${footX.toFixed(1)}" y1="${footY.toFixed(1)}" x2="${shx.toFixed(1)}" y2="${shy.toFixed(1)}" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" opacity="0.65" />
       <circle cx="${shx.toFixed(1)}" cy="${shy.toFixed(1)}" r="4.5" fill="#ffffff" stroke="#b45309" stroke-width="1.5" />
       <rect x="${(shx + 10).toFixed(1)}" y="${(shy - 16).toFixed(1)}" width="145" height="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.5" rx="3" opacity="0.9" />
-      <text x="${(shx + 15).toFixed(1)}" y="${(shy - 3).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#b45309">☀️ ${timeStr} (${angleLabel})</text>
+      <text x="${(shx + 15).toFixed(1)}" y="${(shy - 3).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#b45309">${timeStr} (${angleLabel})</text>
     </g>`;
         } else {
             return `
@@ -1479,7 +1479,7 @@ const SolarisRenderer = {
       <text x="${personX.toFixed(1)}" y="${personY.toFixed(1)}" font-family="'Outfit', sans-serif" font-size="8" font-weight="bold" fill="#000000" text-anchor="middle" dominant-baseline="middle">👤</text>
       <text x="${(personX - 10).toFixed(1)}" y="${personY.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#b45309" text-anchor="end" dominant-baseline="middle">${lang === 'it' ? 'Tu ti trovi qui (Gnomone Umano)' : 'You stand here (Human Gnomon)'}</text>
       <rect x="${(shTipX + 8).toFixed(1)}" y="${(shTipY - 14).toFixed(1)}" width="130" height="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.5" rx="3" opacity="0.9" />
-      <text x="${(shTipX + 13).toFixed(1)}" y="${(shTipY - 2).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" fill="#000000" font-weight="bold">☀️ ${timeStr} (${bearingText})</text>
+      <text x="${(shTipX + 13).toFixed(1)}" y="${(shTipY - 2).toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" fill="#000000" font-weight="bold">${timeStr} (${bearingText})</text>
     </g>`;
             }
         } else {
