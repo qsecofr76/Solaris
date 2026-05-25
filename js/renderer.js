@@ -429,6 +429,71 @@ const SolarisRenderer = {
             }
         });
 
+        // 4.5. Disegna la Lemniscata del Tempo Medio (Analemma dell'orario XII)
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        
+        let firstLemPt = true;
+        const monthMarkers = {};
+
+        const monthInitials = lang === 'it' ? 
+            ["G", "F", "M", "A", "M", "G", "L", "A", "S", "O", "N", "D"] : 
+            ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+        for (let d = 1; d <= 365; d++) {
+            const decVal = SolarisMath.getSolarDeclination(d);
+            const eotVal = SolarisMath.getEquationOfTime(d);
+            const hAngleDeg = eotVal / 4;
+            const sPos = SolarisMath.getSunPosition(lat, decVal, hAngleDeg);
+            
+            if (sPos.altitude > 0) {
+                const shadow = SolarisMath.projectNodusShadowOnWall(sPos.altitude, sPos.azimuth, lat, dec, gparams, params.inclination);
+                if (shadow) {
+                    const sx = ox + shadow.x * mmToPx;
+                    const sy = oy + shadow.y * mmToPx;
+                    
+                    const dist = Math.sqrt((sx-ox)*(sx-ox) + (sy-oy)*(sy-oy));
+                    if (dist < R_ref * 1.3) {
+                        if (firstLemPt) {
+                            ctx.moveTo(sx, sy);
+                            firstLemPt = false;
+                        } else {
+                            ctx.lineTo(sx, sy);
+                        }
+                        
+                        const monthStarts = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
+                        const mIndex = monthStarts.indexOf(d);
+                        if (mIndex !== -1) {
+                            monthMarkers[mIndex] = { x: sx, y: sy };
+                        }
+                    }
+                }
+            }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]); // reset
+
+        // Disegna i marcatori dei mesi (un cerchietto e la lettera del mese)
+        ctx.font = 'bold 9px "Space Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        for (let mIdx in monthMarkers) {
+            const pt = monthMarkers[mIdx];
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.9)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.fillStyle = 'var(--accent-gold)';
+            ctx.fillText(monthInitials[mIdx], pt.x, pt.y);
+        }
+
         // 5. Disegna la proiezione dell'ombra dello stilo in TEMPO REALE
         const currentShadow = SolarisMath.projectNodusShadowOnWall(sunPos.altitude, sunPos.azimuth, lat, dec, gparams, params.inclination);
 
@@ -1057,6 +1122,60 @@ const SolarisRenderer = {
     <path d="M ${pathString}" fill="none" stroke="${dVal.col}" stroke-width="1.5" opacity="0.6" />
     ${textTags}`;
         }).join('');
+    })()}
+
+    <!-- Lemniscata del Tempo Medio (Analemma dell'orario XII) -->
+    ${(() => {
+        const ox = 400;
+        const oy = 350;
+        let lemPoints = [];
+        const monthMarkers = {};
+
+        const monthInitials = lang === 'it' ? 
+            ["G", "F", "M", "A", "M", "G", "L", "A", "S", "O", "N", "D"] : 
+            ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+        for (let d = 1; d <= 365; d++) {
+            const decVal = SolarisMath.getSolarDeclination(d);
+            const eotVal = SolarisMath.getEquationOfTime(d);
+            const hAngleDeg = eotVal / 4;
+            const sPos = SolarisMath.getSunPosition(lat, decVal, hAngleDeg);
+            
+            if (sPos.altitude > 0) {
+                const shadow = SolarisMath.projectNodusShadowOnWall(sPos.altitude, sPos.azimuth, lat, dec, gparams, params.inclination);
+                if (shadow) {
+                    const sx = ox + shadow.x * mmToPx;
+                    const sy = oy + shadow.y * mmToPx;
+                    
+                    const dist = Math.sqrt((sx-ox)*(sx-ox) + (sy-oy)*(sy-oy));
+                    if (dist < R_ref * 1.3) {
+                        lemPoints.push({ x: sx, y: sy });
+                        
+                        const monthStarts = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
+                        const mIndex = monthStarts.indexOf(d);
+                        if (mIndex !== -1) {
+                            monthMarkers[mIndex] = { x: sx, y: sy };
+                        }
+                    }
+                }
+            }
+        }
+        if (lemPoints.length === 0) return '';
+        
+        const pathString = lemPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
+        
+        let markerTags = "";
+        for (let mIdx in monthMarkers) {
+            const pt = monthMarkers[mIdx];
+            markerTags += `
+    <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="4.5" fill="#ffffff" stroke="#b45309" stroke-width="1" />
+    <text x="${pt.x.toFixed(1)}" y="${pt.y.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="7" font-weight="bold" fill="#b45309" text-anchor="middle" dominant-baseline="middle">${monthInitials[mIdx]}</text>`;
+        }
+
+        return `
+    <!-- Lemniscata del Tempo Medio -->
+    <path d="M ${pathString}" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8" />
+    ${markerTags}`;
     })()}
 
     ${(() => {
@@ -2250,6 +2369,50 @@ const SolarisRenderer = {
                     dxfContent += writeText(endPt.x, endPt.y + 10, dVal.label, 8, "CURVE_DECLINAZIONE", dVal.color, 0, 2);
                 }
             });
+
+            // 3.5. Lemniscata del Tempo Medio (Layer: LEMNISCATA - color 2/Giallo)
+            let lastLemPt = null;
+            const dxfMonthMarkers = {};
+            const dxfMonthInitials = lang === 'it' ? 
+                ["G", "F", "M", "A", "M", "G", "L", "A", "S", "O", "N", "D"] : 
+                ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+            for (let d = 1; d <= 365; d++) {
+                const decVal = SolarisMath.getSolarDeclination(d);
+                const eotVal = SolarisMath.getEquationOfTime(d);
+                const hAngleDeg = eotVal / 4;
+                const sPos = SolarisMath.getSunPosition(lat, decVal, hAngleDeg);
+                
+                if (sPos.altitude > 0) {
+                    const shadow = SolarisMath.projectNodusShadowOnWall(sPos.altitude, sPos.azimuth, lat, dec, gparams, params.inclination);
+                    if (shadow) {
+                        const sx = ox + shadow.x * mmToPx;
+                        const sy = oy + shadow.y * mmToPx;
+                        const dist = Math.sqrt((sx-ox)*(sx-ox) + (sy-oy)*(sy-oy));
+                        
+                        if (dist < R_ref * 1.3) {
+                            const curPt = toDxfCoords(sx, sy);
+                            if (lastLemPt !== null) {
+                                dxfContent += writeLine(lastLemPt.x, lastLemPt.y, curPt.x, curPt.y, "LEMNISCATA", 2);
+                            }
+                            lastLemPt = curPt;
+                            
+                            const monthStarts = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
+                            const mIndex = monthStarts.indexOf(d);
+                            if (mIndex !== -1) {
+                                dxfMonthMarkers[mIndex] = curPt;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Aggiungi cerchietti e scritte dei mesi nel DXF
+            for (let mIdx in dxfMonthMarkers) {
+                const pt = dxfMonthMarkers[mIdx];
+                dxfContent += writeCircle(pt.x, pt.y, 4.0, "LEMNISCATA", 7);
+                dxfContent += writeText(pt.x, pt.y, dxfMonthInitials[mIdx], 6.0, "LEMNISCATA", 2, 0, 1);
+            }
 
             // 4. Gnomone Ribaltato / Dima (Layer: GNOMONE_DIMA - color 2/Giallo)
             const sdRad = SolarisMath.degToRad(gparams.substyleAngle);
