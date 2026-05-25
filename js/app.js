@@ -5,7 +5,7 @@
 // 1. Dizionario di Traduzione (Italiano / Inglese)
 const SolarisTranslations = {
     it: {
-        "tagline": "Calcolatore e Progettista di Orologi Solari",
+        "tagline": "Calcolatore Orologi Solari",
         "parameters": "Parametri di Progetto",
         "mode-wall": "Parete (Verticale)",
         "mode-floor": "Pavimento (Umano)",
@@ -88,7 +88,7 @@ const SolarisTranslations = {
         "special-label": "Descrizione Evento"
     },
     en: {
-        "tagline": "Solar Clocks Calculator and Designer",
+        "tagline": "Solar Clocks Calculator",
         "parameters": "Project Parameters",
         "mode-wall": "Wall (Vertical)",
         "mode-floor": "Floor (Human)",
