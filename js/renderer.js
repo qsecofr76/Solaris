@@ -475,23 +475,48 @@ const SolarisRenderer = {
         ctx.stroke();
         ctx.setLineDash([]); // reset
 
-        // Disegna i marcatori dei mesi (un cerchietto e la lettera del mese)
-        ctx.font = 'bold 9px "Space Grotesk", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        for (let mIdx in monthMarkers) {
-            const pt = monthMarkers[mIdx];
-            ctx.fillStyle = '#ffffff';
-            ctx.strokeStyle = 'rgba(245, 158, 11, 0.9)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(pt.x, pt.y, 4, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.stroke();
-            
-            ctx.fillStyle = 'var(--accent-gold)';
-            ctx.fillText(monthInitials[mIdx], pt.x, pt.y);
+        // 4.6. Disegna la "Data Speciale / Anniversario" se abilitata (pallino verde smeraldo)
+        if (params.specialDateEnabled) {
+            const specDate = params.specialDateStr ? new Date(params.specialDateStr) : new Date();
+            const specDayOfYear = SolarisMath.getDayOfYear(specDate);
+            const specDec = SolarisMath.getSolarDeclination(specDayOfYear);
+            const specEot = SolarisMath.getEquationOfTime(specDayOfYear);
+
+            const [specH, specM] = (params.specialTimeStr || "12:00").split(':').map(Number);
+            const specCivilTimeDec = specH + specM / 60;
+            const specSolarTimeDec = SolarisMath.civilToSolarTime(specCivilTimeDec, params.longitude, params.timezone, specEot, params.isDst);
+            const specHourAngle = (specSolarTimeDec - 12) * 15;
+            const specSunPos = SolarisMath.getSunPosition(lat, specDec, specHourAngle);
+
+            if (specSunPos.altitude > 0) {
+                const specShadow = SolarisMath.projectNodusShadowOnWall(specSunPos.altitude, specSunPos.azimuth, lat, dec, gparams, params.inclination);
+                if (specShadow) {
+                    const ssx = ox + specShadow.x * mmToPx;
+                    const ssy = oy + specShadow.y * mmToPx;
+
+                    // Disegna il marcatore verde smeraldo
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(16, 185, 129, 0.6)';
+                    ctx.shadowBlur = 8;
+                    ctx.fillStyle = '#10b981'; // Verde Smeraldo
+                    ctx.strokeStyle = 'var(--accent-gold)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(ssx, ssy, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Etichetta personalizzata dell'anniversario
+                    ctx.fillStyle = '#10b981';
+                    ctx.font = 'bold 9px "Space Grotesk", sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    
+                    const labelText = `💚 ${params.specialLabel || (lang === 'it' ? "Data Speciale" : "Special Date")}`;
+                    ctx.fillText(labelText, ssx + 9, ssy);
+                }
+            }
         }
 
         // 5. Disegna la proiezione dell'ombra dello stilo in TEMPO REALE
@@ -1129,11 +1154,6 @@ const SolarisRenderer = {
         const ox = 400;
         const oy = 350;
         let lemPoints = [];
-        const monthMarkers = {};
-
-        const monthInitials = lang === 'it' ? 
-            ["G", "F", "M", "A", "M", "G", "L", "A", "S", "O", "N", "D"] : 
-            ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
         for (let d = 1; d <= 365; d++) {
             const decVal = SolarisMath.getSolarDeclination(d);
@@ -1150,12 +1170,6 @@ const SolarisRenderer = {
                     const dist = Math.sqrt((sx-ox)*(sx-ox) + (sy-oy)*(sy-oy));
                     if (dist < R_ref * 1.3) {
                         lemPoints.push({ x: sx, y: sy });
-                        
-                        const monthStarts = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
-                        const mIndex = monthStarts.indexOf(d);
-                        if (mIndex !== -1) {
-                            monthMarkers[mIndex] = { x: sx, y: sy };
-                        }
                     }
                 }
             }
@@ -1163,19 +1177,45 @@ const SolarisRenderer = {
         if (lemPoints.length === 0) return '';
         
         const pathString = lemPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
-        
-        let markerTags = "";
-        for (let mIdx in monthMarkers) {
-            const pt = monthMarkers[mIdx];
-            markerTags += `
-    <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="4.5" fill="#ffffff" stroke="#b45309" stroke-width="1" />
-    <text x="${pt.x.toFixed(1)}" y="${pt.y.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="7" font-weight="bold" fill="#b45309" text-anchor="middle" dominant-baseline="middle">${monthInitials[mIdx]}</text>`;
-        }
 
         return `
     <!-- Lemniscata del Tempo Medio -->
-    <path d="M ${pathString}" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8" />
-    ${markerTags}`;
+    <path d="M ${pathString}" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8" />`;
+    })()}
+
+    <!-- Data Speciale / Anniversario Personalizzato -->
+    ${(() => {
+        if (params.specialDateEnabled) {
+            const specDate = params.specialDateStr ? new Date(params.specialDateStr) : new Date();
+            const specDayOfYear = SolarisMath.getDayOfYear(specDate);
+            const specDec = SolarisMath.getSolarDeclination(specDayOfYear);
+            const specEot = SolarisMath.getEquationOfTime(specDayOfYear);
+
+            const [specH, specM] = (params.specialTimeStr || "12:00").split(':').map(Number);
+            const specCivilTimeDec = specH + specM / 60;
+            const specSolarTimeDec = SolarisMath.civilToSolarTime(specCivilTimeDec, params.longitude, params.timezone, specEot, params.isDst);
+            const specHourAngle = (specSolarTimeDec - 12) * 15;
+            const specSunPos = SolarisMath.getSunPosition(lat, specDec, specHourAngle);
+
+            if (specSunPos.altitude > 0) {
+                const specShadow = SolarisMath.projectNodusShadowOnWall(specSunPos.altitude, specSunPos.azimuth, lat, dec, gparams, params.inclination);
+                if (specShadow) {
+                    const ssx = 400 + specShadow.x * mmToPx;
+                    const ssy = 350 + specShadow.y * mmToPx;
+                    const labelText = `💚 ${params.specialLabel || (lang === 'it' ? "Data Speciale" : "Special Date")}`;
+                    
+                    return `
+    <g id="special-anniversary-point">
+      <!-- Cerchio verde smeraldo -->
+      <circle cx="${ssx.toFixed(1)}" cy="${ssy.toFixed(1)}" r="5.5" fill="#10b981" stroke="#b45309" stroke-width="1.5" />
+      <circle cx="${ssx.toFixed(1)}" cy="${ssy.toFixed(1)}" r="2.0" fill="#ffffff" />
+      <!-- Testo etichetta anniversario -->
+      <text x="${(ssx + 9).toFixed(1)}" y="${ssy.toFixed(1)}" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#10b981" dominant-baseline="middle">${labelText}</text>
+    </g>`;
+                }
+            }
+        }
+        return '';
     })()}
 
     ${(() => {
@@ -2372,10 +2412,6 @@ const SolarisRenderer = {
 
             // 3.5. Lemniscata del Tempo Medio (Layer: LEMNISCATA - color 2/Giallo)
             let lastLemPt = null;
-            const dxfMonthMarkers = {};
-            const dxfMonthInitials = lang === 'it' ? 
-                ["G", "F", "M", "A", "M", "G", "L", "A", "S", "O", "N", "D"] : 
-                ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
             for (let d = 1; d <= 365; d++) {
                 const decVal = SolarisMath.getSolarDeclination(d);
@@ -2396,22 +2432,38 @@ const SolarisRenderer = {
                                 dxfContent += writeLine(lastLemPt.x, lastLemPt.y, curPt.x, curPt.y, "LEMNISCATA", 2);
                             }
                             lastLemPt = curPt;
-                            
-                            const monthStarts = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
-                            const mIndex = monthStarts.indexOf(d);
-                            if (mIndex !== -1) {
-                                dxfMonthMarkers[mIndex] = curPt;
-                            }
                         }
                     }
                 }
             }
 
-            // Aggiungi cerchietti e scritte dei mesi nel DXF
-            for (let mIdx in dxfMonthMarkers) {
-                const pt = dxfMonthMarkers[mIdx];
-                dxfContent += writeCircle(pt.x, pt.y, 4.0, "LEMNISCATA", 7);
-                dxfContent += writeText(pt.x, pt.y, dxfMonthInitials[mIdx], 6.0, "LEMNISCATA", 2, 0, 1);
+            // 3.6. Data Speciale / Anniversario Personalizzato (Layer: ANNIVERSARIO - color 3/Verde)
+            if (params.specialDateEnabled) {
+                const specDate = params.specialDateStr ? new Date(params.specialDateStr) : new Date();
+                const specDayOfYear = SolarisMath.getDayOfYear(specDate);
+                const specDec = SolarisMath.getSolarDeclination(specDayOfYear);
+                const specEot = SolarisMath.getEquationOfTime(specDayOfYear);
+
+                const [specH, specM] = (params.specialTimeStr || "12:00").split(':').map(Number);
+                const specCivilTimeDec = specH + specM / 60;
+                const specSolarTimeDec = SolarisMath.civilToSolarTime(specCivilTimeDec, params.longitude, params.timezone, specEot, params.isDst);
+                const specHourAngle = (specSolarTimeDec - 12) * 15;
+                const specSunPos = SolarisMath.getSunPosition(lat, specDec, specHourAngle);
+
+                if (specSunPos.altitude > 0) {
+                    const specShadow = SolarisMath.projectNodusShadowOnWall(specSunPos.altitude, specSunPos.azimuth, lat, dec, gparams, params.inclination);
+                    if (specShadow) {
+                        const ssx = ox + specShadow.x * mmToPx;
+                        const ssy = oy + specShadow.y * mmToPx;
+                        const pSpec = toDxfCoords(ssx, ssy);
+                        
+                        dxfContent += writeCircle(pSpec.x, pSpec.y, 5.0, "ANNIVERSARIO", 3);
+                        dxfContent += writeCircle(pSpec.x, pSpec.y, 2.0, "ANNIVERSARIO", 7);
+
+                        const labelText = params.specialLabel || (lang === 'it' ? "Data Speciale" : "Special Date");
+                        dxfContent += writeText(pSpec.x + 8.0, pSpec.y, labelText, 8.0, "ANNIVERSARIO", 3, 0, 0);
+                    }
+                }
             }
 
             // 4. Gnomone Ribaltato / Dima (Layer: GNOMONE_DIMA - color 2/Giallo)

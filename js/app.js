@@ -81,7 +81,11 @@ const SolarisTranslations = {
         "west": "Ovest",
         "shadow-angle": "Angolo dell'Ombra:",
         "export-html": "Esporta HTML",
-        "export-dxf": "Esporta DXF"
+        "export-dxf": "Esporta DXF",
+        "enable-special": "Abilita Data Speciale",
+        "special-date": "Data dell'Evento",
+        "special-time": "Ora dell'Evento",
+        "special-label": "Descrizione Evento"
     },
     en: {
         "tagline": "Sundial Calculator and Designer",
@@ -160,7 +164,11 @@ const SolarisTranslations = {
         "west": "West",
         "shadow-angle": "Shadow Angle:",
         "export-html": "Export HTML",
-        "export-dxf": "Export DXF"
+        "export-dxf": "Export DXF",
+        "enable-special": "Enable Special Anniversary",
+        "special-date": "Event Date",
+        "special-time": "Event Time",
+        "special-label": "Event Description"
     }
 };
 
@@ -184,7 +192,11 @@ const SolarisApp = {
         isLive: false,
         wallZoom: 100,
         floorZoom: 80,
-        personHeight: 1.70
+        personHeight: 1.70,
+        specialDateEnabled: false,
+        specialDateStr: "2026-06-21",
+        specialTimeStr: "12:00",
+        specialLabel: "Anniversario"
     },
 
     liveInterval: null,
@@ -296,6 +308,33 @@ const SolarisApp = {
         document.getElementById('input-person-height').addEventListener('input', (e) => {
             SolarisApp.state.personHeight = parseFloat(e.target.value);
             document.getElementById('person-height-val').innerText = `${parseFloat(e.target.value).toFixed(2)} m`;
+            SolarisApp.calculateAndRedraw();
+        });
+
+        // Controlli per la Data Speciale (Anniversario)
+        document.getElementById('checkbox-special-event').addEventListener('change', (e) => {
+            SolarisApp.state.specialDateEnabled = e.target.checked;
+            const inputsDiv = document.getElementById('special-event-inputs');
+            if (e.target.checked) {
+                inputsDiv.classList.remove('hidden');
+            } else {
+                inputsDiv.classList.add('hidden');
+            }
+            SolarisApp.calculateAndRedraw();
+        });
+
+        document.getElementById('input-special-date').addEventListener('change', (e) => {
+            SolarisApp.state.specialDateStr = e.target.value;
+            SolarisApp.calculateAndRedraw();
+        });
+
+        document.getElementById('input-special-time').addEventListener('change', (e) => {
+            SolarisApp.state.specialTimeStr = e.target.value;
+            SolarisApp.calculateAndRedraw();
+        });
+
+        document.getElementById('input-special-label').addEventListener('input', (e) => {
+            SolarisApp.state.specialLabel = e.target.value;
             SolarisApp.calculateAndRedraw();
         });
 
@@ -535,6 +574,18 @@ const SolarisApp = {
         document.getElementById('check-dst').checked = SolarisApp.state.isDst;
         document.getElementById('input-date').value = SolarisApp.state.date;
         document.getElementById('input-time').value = SolarisApp.state.timeMinutes;
+
+        // Inizializza i valori per la Data Speciale
+        document.getElementById('checkbox-special-event').checked = SolarisApp.state.specialDateEnabled;
+        document.getElementById('input-special-date').value = SolarisApp.state.specialDateStr;
+        document.getElementById('input-special-time').value = SolarisApp.state.specialTimeStr;
+        document.getElementById('input-special-label').value = SolarisApp.state.specialLabel;
+        const inputsDiv = document.getElementById('special-event-inputs');
+        if (SolarisApp.state.specialDateEnabled) {
+            inputsDiv.classList.remove('hidden');
+        } else {
+            inputsDiv.classList.add('hidden');
+        }
 
         SolarisApp.syncInputLabels();
         SolarisApp.updateTimeDisplay();
