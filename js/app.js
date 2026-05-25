@@ -80,7 +80,8 @@ const SolarisTranslations = {
         "east": "Est",
         "west": "Ovest",
         "shadow-angle": "Angolo dell'Ombra:",
-        "export-html": "Esporta HTML"
+        "export-html": "Esporta HTML",
+        "export-dxf": "Esporta DXF"
     },
     en: {
         "tagline": "Sundial Calculator and Designer",
@@ -158,7 +159,8 @@ const SolarisTranslations = {
         "east": "East",
         "west": "West",
         "shadow-angle": "Shadow Angle:",
-        "export-html": "Export HTML"
+        "export-html": "Export HTML",
+        "export-dxf": "Export DXF"
     }
 };
 
@@ -450,6 +452,11 @@ const SolarisApp = {
         // Esportazione HTML Standalone
         document.getElementById('btn-export-html').addEventListener('click', () => {
             SolarisRenderer.exportToHTML(SolarisApp.state.mode, SolarisApp.state, SolarisApp.state.lang);
+        });
+
+        // Esportazione DXF
+        document.getElementById('btn-export-dxf').addEventListener('click', () => {
+            SolarisRenderer.exportToDXF(SolarisApp.state.mode, SolarisApp.state, SolarisApp.state.lang);
         });
 
         // Esportazione CSV
